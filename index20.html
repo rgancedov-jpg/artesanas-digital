@@ -2,100 +2,92 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Emprendimiento Artesanal</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <title>Artesanas y Emprendedoras</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
       text-align: center;
+      margin: 40px;
     }
     h1 {
       font-size: 24px;
-      margin-bottom: 5px;
     }
     h2 {
       font-size: 18px;
-      font-weight: normal;
-      margin-top: 5px;
-      margin-bottom: 20px;
+      margin-bottom: 40px; /* más espacio debajo del subtítulo */
     }
     #qrcode {
-      margin-top: 40px; /* 🔽 QR más abajo para que se vea bien el subtítulo */
+      margin-top: 30px; /* QR más abajo */
     }
-    .gallery img {
-      width: 150px;
-      margin: 10px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-    }
-    .instagram {
+    .links {
       margin-top: 20px;
-      font-size: 14px;
     }
-    .btn {
-      margin-top: 20px;
+    a {
+      color: blue;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    button {
+      margin-top: 30px;
       padding: 10px 20px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-
-  <h1>Artesanías Digitales</h1>
+  <h1>Artesanas y Emprendedoras</h1>
   <h2>Impulsando a artesanas y emprendedoras hacia la transformación digital</h2>
 
-  <!-- QR bajado un poco -->
-  <div id="qrcode"></div>
+  <!-- Aquí irá el QR -->
+  <canvas id="qrcode"></canvas>
 
-  <!-- Galería de imágenes -->
-  <div class="gallery">
-    <p><b>Logo</b></p>
-    <img src="logo.png" alt="Logo">
-    <p><b>Producto 1</b></p>
-    <img src="producto1.png" alt="Producto 1">
-    <p><b>Producto 2</b></p>
-    <img src="producto2.png" alt="Producto 2">
-  </div>
-
-  <!-- Enlace Instagram -->
-  <div class="instagram">
+  <div class="links">
     <p>
-      Síguenos en Instagram: @tu_usuario <br>
-      <a href="https://instagram.com/tu_usuario" target="_blank">
-        https://instagram.com/tu_usuario
+      Síguenos en Instagram:  
+      <a href="https://www.instagram.com/tu_cuenta" target="_blank">
+        https://www.instagram.com/tu_cuenta
       </a>
     </p>
   </div>
 
-  <button class="btn" onclick="downloadPDF()">Descargar PDF</button>
+  <button onclick="downloadPDF()">Descargar en PDF</button>
 
   <script>
-    // Generar QR con link a Instagram
-    new QRCode(document.getElementById("qrcode"), {
-      text: "https://instagram.com/tu_usuario",
-      width: 128,
-      height: 128
+    // Generar QR
+    var qr = new QRious({
+      element: document.getElementById('qrcode'),
+      value: 'https://www.instagram.com/tu_cuenta',
+      size: 150
     });
 
-    // Exportar PDF
+    // Función para exportar a PDF
     function downloadPDF() {
-      const element = document.body;
-      const opt = {
-        margin:       0.5,
-        filename:     'emprendimiento-artesanal.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-      html2pdf().from(element).set(opt).save();
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("Artesanas y Emprendedoras", 20, 20);
+
+      doc.setFontSize(14);
+      doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 20, 30);
+
+      // Insertar QR
+      const qrCanvas = document.getElementById('qrcode');
+      const qrImage = qrCanvas.toDataURL("image/png");
+      doc.addImage(qrImage, "PNG", 70, 50, 70, 70);
+
+      // Enlace Instagram (texto OCR + link clickeable en PDF)
+      doc.setFontSize(12);
+      doc.textWithLink("Síguenos en Instagram:", 20, 140, { url: "https://www.instagram.com/tu_cuenta" });
+      doc.text("https://www.instagram.com/tu_cuenta", 20, 150);
+
+      // Guardar PDF
+      doc.save("artesanas_emprendedoras.pdf");
     }
   </script>
-
 </body>
 </html>
