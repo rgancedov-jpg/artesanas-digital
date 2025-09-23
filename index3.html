@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generador de Perfil Emprendedora</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .preview-container img { max-width: 120px; margin: 5px; border: 1px solid #ddd; padding: 5px; }
+    label { display: block; margin-top: 15px; font-weight: bold; }
+    button { margin-top: 20px; padding: 10px 15px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Generador de Perfil en PDF</h1>
+
+  <!-- Logo -->
+  <label for="logo">Sube el Logo del Emprendimiento:</label>
+  <input type="file" id="logo" accept="image/*" />
+  <div id="logoPreview" class="preview-container"></div>
+
+  <!-- Producto 1 -->
+  <label for="producto1">Sube Imagen de Producto 1:</label>
+  <input type="file" id="producto1" accept="image/*" />
+  <div id="producto1Preview" class="preview-container"></div>
+
+  <!-- Producto 2 -->
+  <label for="producto2">Sube Imagen de Producto 2:</label>
+  <input type="file" id="producto2" accept="image/*" />
+  <div id="producto2Preview" class="preview-container"></div>
+
+  <!-- Botón -->
+  <button onclick="generarPDF()">Generar PDF</button>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+    let doc;
+
+    // Mostrar preview de imagen cargada
+    function previewImage(input, previewId) {
+      const preview = document.getElementById(previewId);
+      preview.innerHTML = "";
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    document.getElementById("logo").addEventListener("change", function() {
+      previewImage(this, "logoPreview");
+    });
+    document.getElementById("producto1").addEventListener("change", function() {
+      previewImage(this, "producto1Preview");
+    });
+    document.getElementById("producto2").addEventListener("change", function() {
+      previewImage(this, "producto2Preview");
+    });
+
+    // Función para añadir imágenes con etiquetas
+    function addImagesSequentially(images, labels, callback, x = 20, y = 40) {
+      if (images.length === 0) {
+        callback();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        doc.addImage(e.target.result, "PNG", x, y, 50, 50);
+        doc.setFontSize(10);
+        doc.text(labels[0], x, y + 60); // Texto debajo
+        addImagesSequentially(images.slice(1), labels.slice(1), callback, x + 70, y);
+      };
+      reader.readAsDataURL(images[0]);
+    }
+
+    // Generar PDF
+    function generarPDF() {
+      doc = new jsPDF();
+
+      const logoInput = document.getElementById("logo");
+      const producto1Input = document.getElementById("producto1");
+      const producto2Input = document.getElementById("producto2");
+
+      let allImages = [];
+      let labels = [];
+
+      if (logoInput.files.length > 0) {
+        allImages.push(logoInput.files[0]);
+        labels.push("Logo");
+      }
+      if (producto1Input.files.length > 0) {
+        allImages.push(producto1Input.files[0]);
+        labels.push("Producto 1");
+      }
+      if (producto2Input.files.length > 0) {
+        allImages.push(producto2Input.files[0]);
+        labels.push("Producto 2");
+      }
+
+      if (allImages.length === 0) {
+        alert("Por favor, sube al menos una imagen.");
+        return;
+      }
+
+      addImagesSequentially(allImages, labels, function() {
+        doc.save("perfil_emprendedora.pdf");
+      });
+    }
+  </script>
+</body>
+</html>
