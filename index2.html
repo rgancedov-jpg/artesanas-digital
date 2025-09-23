@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solución Web y QR - Artesanas y Emprendedoras</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background: #f9f9f9;
+      text-align: left;
+    }
+    h1 {
+      color: #4a148c;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .subtitulo {
+      color: #6a1b9a;
+      font-size: 1.3rem; 
+      margin-top: 0.2rem;
+    }
+    h2 {
+      color: #6a1b9a;
+      font-size: 1.6rem;
+      margin-top: 0.2rem;
+    }
+    p {
+      margin-bottom: 1.5rem;
+    }
+    form {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin: 1rem 0;
+      max-width: 500px;
+    }
+    input, textarea, button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #6a1b9a;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #4a148c;
+    }
+    #qrcode {
+      margin-top: 1rem;
+    }
+    img.preview {
+      max-width: 120px;
+      margin: 10px 5px 0 0;
+      display: inline-block;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 3px;
+      background: #fff;
+    }
+    .preview-container {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ministerio de la Mujer</h1>
+  <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformación digital</p>
+  <h2>Solución Web y QR para Artesanas y Emprendedoras</h2>
+  <p>Llena tus datos y genera tu código QR digital y documento en PDF.</p>
+
+  <form id="dataForm">
+    <input type="text" id="nombre" placeholder="Nombre de la Emprendedora" required />
+    <input type="text" id="telefono" placeholder="Número de Teléfono" required />
+    <input type="text" id="emprendimiento" placeholder="Ubicación del Emprendimiento (provincia, distrito, corregimiento, comunidad)" required />
+    
+    <label>Logo del emprendimiento:</label>
+    <input type="file" id="logo" accept="image/*" />
+    <div id="logoPreview" class="preview-container"></div>
+
+    <textarea id="descripcion" placeholder="Descripción de sus productos (qué servicio ofrece)" required></textarea>
+    <input type="text" id="instagram" placeholder="Instagram del negocio (ej: @miemprendimiento)" required />
+    
+    <label>Sube 1 o 2 fotos de tus productos:</label>
+    <input type="file" id="productos" accept="image/*" multiple />
+    <div id="productosPreview" class="preview-container"></div>
+
+    <button type="submit">Generar QR y PDF</button>
+  </form>
+
+  <div id="qrcode"></div>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+
+    // Vista previa del logo
+    document.getElementById("logo").addEventListener("change", function() {
+      const preview = document.getElementById("logoPreview");
+      preview.innerHTML = "";
+      if (this.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.classList.add("preview");
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+
+    // Vista previa de productos
+    document.getElementById("productos").addEventListener("change", function() {
+      const preview = document.getElementById("productosPreview");
+      preview.innerHTML = "";
+      const files = Array.from(this.files).slice(0, 2);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.classList.add("preview");
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    document.getElementById("dataForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const nombre = document.getElementById("nombre").value;
+      const telefono = document.getElementById("telefono").value;
+      const emprendimiento = document.getElementById("emprendimiento").value;
+      const descripcion = document.getElementById("descripcion").value;
+      const instagram = document.getElementById("instagram").value;
+      const logoInput = document.getElementById("logo");
+      const productosInput = document.getElementById("productos");
+
+      const datos = `
+Ministerio de la Mujer
+Nombre: ${nombre}
+Teléfono: ${telefono}
+Emprendimiento: ${emprendimiento}
+Descripción: ${descripcion}
+Instagram: ${instagram}
+      `;
+
+      const qrDiv = document.getElementById("qrcode");
+      qrDiv.innerHTML = "";  
+
+      QRCode.toCanvas(datos, { width: 200 }, function (err, canvas) {
+        if (err) console.error(err);
+        qrDiv.appendChild(canvas);
+
+        const qrDataUrl = canvas.toDataURL("image/png");
+        const doc = new jsPDF();
+
+        // Encabezado
+        doc.setFontSize(22);
+        doc.text("Ministerio de la Mujer", 20, 20);
+        
+        doc.setFontSize(14);
+        doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 20, 30); 
+        
+        doc.setFontSize(16);
+        doc.text("Perfil Digital - Artesanas y Emprendedoras", 20, 45);
+
+        // Datos
+        doc.setFontSize(12);
+        doc.text(`Nombre: ${nombre}`, 20, 65);
+        doc.text(`Teléfono: ${telefono}`, 20, 75);
+        doc.text(`Emprendimiento: ${emprendimiento}`, 20, 85);
+        doc.text(`Descripción: ${descripcion}`, 20, 95);
+        doc.text(`Instagram: ${instagram}`, 20, 105);
+
+        // Agregar QR
+        doc.addImage(qrDataUrl, "PNG", 140, 50, 50, 50);
+
+        // Sección galería
+        let yPos = 125;
+        doc.setFontSize(14);
+        doc.text("Galería de Imágenes", 20, yPos);
+        yPos += 10;
+
+        function addImagesSequentially(images, labels, callback, x = 20, y = yPos) {
+          if (images.length === 0) {
+            callback();
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            doc.addImage(e.target.result, "PNG", x, y, 40, 40);
+            doc.setFontSize(10);
+            doc.text(labels[0], x, y + 50); // Texto debajo
+            addImagesSequentially(images.slice(1), labels.slice(1), callback, x + 50, y); 
+          };
+          reader.readAsDataURL(images[0]);
+        }
+
+        let allImages = [];
+        let labels = [];
+
+        if (logoInput.files.length > 0) {
+          allImages.push(logoInput.files[0]);
+          labels.push("Logo");
+        }
+        if (productosInput.files.length > 0) {
+          for (let i = 0; i < Math.min(productosInput.files.length, 2); i++) {
+            allImages.push(productosInput.files[i]);
+            labels.push(`Producto ${i + 1}`);
+          }
+        }
+
+        addImagesSequentially(allImages, labels, function() {
+          doc.save("perfil_emprendedora.pdf");
+        });
+      });
+    });
+  </script>
+</body>
+</html>
