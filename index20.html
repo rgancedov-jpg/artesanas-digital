@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Emprendimiento Artesanal</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: normal;
+      margin-top: 5px;
+      margin-bottom: 20px;
+    }
+    #qrcode {
+      margin-top: 40px; /* 🔽 QR más abajo para que se vea bien el subtítulo */
+    }
+    .gallery img {
+      width: 150px;
+      margin: 10px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+    .instagram {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Artesanías Digitales</h1>
+  <h2>Impulsando a artesanas y emprendedoras hacia la transformación digital</h2>
+
+  <!-- QR bajado un poco -->
+  <div id="qrcode"></div>
+
+  <!-- Galería de imágenes -->
+  <div class="gallery">
+    <p><b>Logo</b></p>
+    <img src="logo.png" alt="Logo">
+    <p><b>Producto 1</b></p>
+    <img src="producto1.png" alt="Producto 1">
+    <p><b>Producto 2</b></p>
+    <img src="producto2.png" alt="Producto 2">
+  </div>
+
+  <!-- Enlace Instagram -->
+  <div class="instagram">
+    <p>
+      Síguenos en Instagram: @tu_usuario <br>
+      <a href="https://instagram.com/tu_usuario" target="_blank">
+        https://instagram.com/tu_usuario
+      </a>
+    </p>
+  </div>
+
+  <button class="btn" onclick="downloadPDF()">Descargar PDF</button>
+
+  <script>
+    // Generar QR con link a Instagram
+    new QRCode(document.getElementById("qrcode"), {
+      text: "https://instagram.com/tu_usuario",
+      width: 128,
+      height: 128
+    });
+
+    // Exportar PDF
+    function downloadPDF() {
+      const element = document.body;
+      const opt = {
+        margin:       0.5,
+        filename:     'emprendimiento-artesanal.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().from(element).set(opt).save();
+    }
+  </script>
+
+</body>
+</html>
