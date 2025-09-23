@@ -242,4 +242,56 @@ Instagram: ${instagramUrl}
                 doc.text(`Nombre de la Emprendedora: ${nombre}`, 20, yPos);
                 doc.text(`Teléfono: ${telefono}`, 20, yPos + 10);
                 doc.text(`Ubicación: ${ubicacion}`, 20, yPos + 20);
-                doc.text(`Nombre del Emprendimiento: ${nombreEmprendimiento}`, 20, yPos +
+                doc.text(`Nombre del Emprendimiento: ${nombreEmprendimiento}`, 20, yPos + 30);
+                
+                let yOffset = yPos + 40;
+
+                if (logoInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        doc.rect(20, yOffset, 40, 40);
+                        doc.addImage(e.target.result, "PNG", 20, yOffset, 40, 40);
+                        addRemainingText(yOffset + 45);
+                    };
+                    reader.readAsDataURL(logoInput.files[0]);
+                } else {
+                    addRemainingText(yOffset);
+                }
+
+                function addRemainingText(y) {
+                    doc.setFontSize(12);
+                    doc.text(`Descripción: ${descripcion}`, 20, y);
+                    doc.text(`Instagram: ${instagram}`, 20, y + 10);
+                    
+                    doc.link(20, y + 10, doc.getStringUnitWidth(`Instagram: ${instagram}`) * 12, 10, { url: instagramUrl });
+
+                    y = y + 20;
+
+                    function addProductImage(file, label, x, y, callback) {
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                doc.rect(x, y, 40, 40);
+                                doc.addImage(e.target.result, "PNG", x, y, 40, 40);
+                                doc.text(label, x, y + 45);
+                                callback();
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            callback();
+                        }
+                    }
+
+                    y = y + 20;
+                    addProductImage(producto1Input.files[0], descProducto1, 20, y, function() {
+                        addProductImage(producto2Input.files[0], descProducto2, 70, y, function() {
+                            doc.addImage(qrDataUrl, "PNG", 160, 40, 40, 40);
+                            doc.save("perfil_emprendedora.pdf");
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
