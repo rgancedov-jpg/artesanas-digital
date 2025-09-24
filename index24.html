@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil Digital - Ministerio de la Mujer</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+            background: #f9f9f9;
+            text-align: left;
+        }
+        h1, h2 {
+            color: #4a148c;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitulo {
+            color: #6a1b9a;
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+        }
+        form {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            max-width: 600px;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        input, textarea {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            background-color: #6a1b9a;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            width: auto;
+        }
+        .btn:hover {
+            background-color: #4a148c;
+        }
+        .opciones {
+            margin: 15px 0;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .opciones b {
+            font-size: 1.1rem;
+        }
+        #qrDisplay {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #qrCanvas {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <h1>Ministerio de la Mujer</h1>
+    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformación digital</p>
+
+    <form id="dataForm">
+        <label for="nombre">Nombre de la Emprendedora</label>
+        <input type="text" id="nombre" required />
+
+        <label for="telefono">Número de Teléfono</label>
+        <input type="text" id="telefono" required />
+
+        <label for="ubicacion">Ubicación del Emprendimiento</label>
+        <input type="text" id="ubicacion" required />
+
+        <label for="nombreEmprendimiento">Nombre del emprendimiento</label>
+        <input type="text" id="nombreEmprendimiento" required />
+
+        <label for="logo">Logo del emprendimiento</label>
+        <input type="file" id="logo" accept="image/*" />
+
+        <label for="descripcion">Descripción de sus productos</label>
+        <textarea id="descripcion" required></textarea>
+
+        <label for="instagram">Instagram del negocio</label>
+        <input type="text" id="instagram" placeholder="@miemprendimiento" required />
+
+        <div class="product-gallery">
+            <h3>Productos de Muestra</h3>
+            <label for="producto1">Producto 1</label>
+            <input type="file" id="producto1" accept="image/*" />
+            <input type="text" id="descProducto1" placeholder="Descripción Producto 1" />
+
+            <label for="producto2">Producto 2</label>
+            <input type="file" id="producto2" accept="image/*" />
+            <input type="text" id="descProducto2" placeholder="Descripción Producto 2" />
+        </div>
+        
+        <div class="opciones">
+            <b>Formato del QR:</b><br>
+            <label><input type="radio" name="formatoQR" value="1" checked> Solo Instagram directo</label><br>
+            <label><input type="radio" name="formatoQR" value="2"> Todos los datos + Instagram</label>
+        </div>
+        
+        <div class="btn-container">
+            <button type="button" class="btn" onclick="generarQR()">Generar QR</button>
+            <button type="button" class="btn" onclick="generarPDF()">Descargar PDF</button>
+        </div>
+    </form>
+
+    <div id="qrDisplay">
+      <canvas id="qrCanvas" style="display:none;"></canvas>
+      <div id="qrMensaje"></div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+
+        function validarCampos() {
+            const form = document.getElementById("dataForm");
+            if (!form.checkValidity()) {
+                alert("Por favor, rellene todos los campos obligatorios.");
+                form.reportValidity();
+                return false;
+            }
+            return true;
+        }
+
+        async function generarQR() {
+            if (!validarCampos()) return;
+
+            const nombre = document.getElementById("nombre").value;
+            const telefono = document.getElementById("telefono").value;
+            const ubicacion = document.getElementById("ubicacion").value;
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value;
+            const descripcion = document.getElementById("descripcion").value;
+            const instagramUser = document.getElementById("instagram").value;
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            const formato = document.querySelector('input[name="formatoQR"]:checked').value;
+
+            let datosQR = "";
+            if (formato === "1") {
+                datosQR = instagramUrl;
+            } else {
+                datosQR = `
+Nombre: ${nombre}
+Teléfono: ${telefono}
+Ubicación: ${ubicacion}
+Emprendimiento: ${nombreEmprendimiento}
+Descripción: ${descripcion}
+Instagram: ${instagramUser}
+Link: ${instagramUrl}
+                `;
+            }
+
+            const qrCanvas = document.getElementById("qrCanvas");
+            const qrMensaje = document.getElementById("qrMensaje");
+
+            QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
+                if (error) {
+                    console.error(error);
+                    qrMensaje.textContent = "Error al generar el QR.";
+                    qrCanvas.style.display = 'none';
+                } else {
+                    qrMensaje.textContent = "QR generado correctamente ✅";
+                    qrCanvas.style.display = 'block';
+                }
+            });
+        }
+
+        async function generarPDF() {
+            const qrCanvas = document.getElementById("qrCanvas");
+            const nombre = document.getElementById("nombre").value;
+            const telefono = document.getElementById("telefono").value;
+            const ubicacion = document.getElementById("ubicacion").value;
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value;
+            const descripcion = document.getElementById("descripcion").value;
+            const instagramUser = document.getElementById("instagram").value;
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            const logoInput = document.getElementById("logo");
+            const producto1Input = document.getElementById("producto1");
+            const producto2Input = document.getElementById("producto2");
+            const descProducto1 = document.getElementById("descProducto1").value || "Producto 1";
+            const descProducto2 = document.getElementById("descProducto2").value || "Producto 2";
+
+            if (qrCanvas.style.display === 'none') {
+                alert("Por favor, primero genere el QR haciendo clic en 'Generar QR'.");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const qrImg = qrCanvas.toDataURL("image/png");
+
+            doc.setFontSize(18);
+            doc.text("Ministerio de la Mujer", 20, 20);
+            doc.setFontSize(12);
+            doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 20, 28);
+            doc.setFontSize(14);
+            doc.text("Perfil Digital - Artesanas y Emprendedoras", 20, 40);
+            doc.addImage(qrImg, "PNG", 140, 40, 60, 60);
+
+            let yPos = 55;
+            doc.text(`Nombre de la Emprendedora: ${nombre}`, 20, yPos);
+            doc.text(`Teléfono: ${telefono}`, 20, yPos + 10);
+            doc.text(`Ubicación: ${ubicacion}`, 20, yPos + 20);
+            doc.text(`Nombre del Emprendimiento: ${nombreEmprendimiento}`, 20, yPos + 30);
+
+            let yOffset = yPos + 40;
+            const promises = [];
+
+            if (logoInput.files[0]) {
+                promises.push(new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        doc.addImage(e.target.result, "PNG", 20, yOffset, 40, 40);
+                        yOffset += 50;
+                        resolve();
+                    };
+                    reader.readAsDataURL(logoInput.files[0]);
+                }));
+            } else {
+                promises.push(Promise.resolve());
+            }
+
+            promises.push(new Promise((resolve) => {
+                doc.setFontSize(12);
+                doc.text(`Descripción: ${descripcion}`, 20, yOffset);
+                doc.text(`Instagram: ${instagramUser}`, 20, yOffset + 10);
+                doc.textWithLink(`Link: ${instagramUrl}`, 20, yOffset + 20, { url: instagramUrl });
+                resolve();
+            }));
+
+            yOffset += 40;
+            const productPromises = [];
+            
+            productPromises.push(new Promise((resolve) => {
+                if (producto1Input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        doc.addImage(e.target.result, "PNG", 20, yOffset, 40, 40);
+                        doc.text(descProducto1, 20, yOffset + 45);
+                        resolve();
+                    };
+                    reader.readAsDataURL(producto1Input.files[0]);
+                } else {
+                    resolve();
+                }
+            }));
+            
+            productPromises.push(new Promise((resolve) => {
+                if (producto2Input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        doc.addImage(e.target.result, "PNG", 70, yOffset, 40, 40);
+                        doc.text(descProducto2, 70, yOffset + 45);
+                        resolve();
+                    };
+                    reader.readAsDataURL(producto2Input.files[0]);
+                } else {
+                    resolve();
+                }
+            }));
+
+            Promise.all(promises).then(() => {
+                Promise.all(productPromises).then(() => {
+                    doc.save(`${nombreEmprendimiento}_perfil.pdf`);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
