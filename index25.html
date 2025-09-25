@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>QR para Emprendedoras - Ministerio de la Mujer</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f4f8; /* Color de fondo más suave */
+      color: #333;
+    }
+    h2 {
+      color: #6a1b9a; /* Púrpura más vibrante */
+      border-bottom: 2px solid #6a1b9a;
+      padding-bottom: 10px;
+    }
+    h3 {
+      color: #4a148c;
+    }
+    .btn {
+      margin: 5px;
+      padding: 12px 20px;
+      border: none;
+      background-color: #4a148c;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    .btn:hover {
+      background-color: #6a1b9a;
+    }
+    #qrCanvas {
+      margin-top: 20px;
+      padding: 15px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+    }
+    .form-section {
+      margin: 15px 0;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
+    }
+    .form-section label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .form-section input[type="text"],
+    .form-section input[type="file"],
+    .form-section textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+      margin-bottom: 10px; /* Espacio debajo de los campos */
+    }
+    .form-section textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+    .image-preview {
+        max-width: 100px;
+        max-height: 100px;
+        display: block;
+        margin-top: 5px;
+        margin-bottom: 10px;
+        border: 1px solid #eee;
+        padding: 2px;
+        border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Ministerio de la Mujer</h2>
+  <h3>Impulsando a artesanas y emprendedoras hacia la transformación digital</h3>
+
+  <form id="formDatos">
+    <div class="form-section">
+      <label>Nombre de la Emprendedora: <input type="text" id="nombre" required></label>
+      <label>Número de Teléfono: <input type="text" id="telefono" required></label>
+      <label>Ubicación del Emprendimiento: <input type="text" id="ubicacion" required></label>
+      <label>Nombre del emprendimiento: <input type="text" id="emprendimiento" required></label>
+      
+      <label>Logo del emprendimiento:
+          <input type="file" id="logoUpload" accept="image/*" onchange="previewImage(event, 'logoPreview')">
+          <img id="logoPreview" class="image-preview" src="#" alt="Vista previa del logo" style="display:none;">
+      </label>
+      
+      <label>Descripción de sus productos: <textarea id="descripcion" required></textarea></label>
+      <label>Instagram del negocio (@usuario): <input type="text" id="instagram" required></label>
+    </div>
+
+    <div class="form-section">
+      <h3>Productos de Muestra</h3>
+      <label>Producto 1:
+          <input type="file" id="producto1Upload" accept="image/*" onchange="previewImage(event, 'producto1Preview')">
+          <img id="producto1Preview" class="image-preview" src="#" alt="Vista previa Producto 1" style="display:none;">
+          <textarea id="descripcionProducto1" placeholder="Descripción Producto 1"></textarea>
+      </label>
+      
+      <label>Producto 2:
+          <input type="file" id="producto2Upload" accept="image/*" onchange="previewImage(event, 'producto2Preview')">
+          <img id="producto2Preview" class="image-preview" src="#" alt="Vista previa Producto 2" style="display:none;">
+          <textarea id="descripcionProducto2" placeholder="Descripción Producto 2"></textarea>
+      </label>
+    </div>
+
+    <div class="form-section">
+      <h3>Formato del QR:</h3>
+      <label><input type="radio" name="formatoQR" value="1" checked> Solo Instagram directo</label><br>
+      <label><input type="radio" name="formatoQR" value="2"> Todos los datos + Instagram</label>
+    </div>
+
+    <button type="button" class="btn" onclick="generarQR()">Generar QR</button>
+    <button type="button" class="btn" onclick="generarPDF()">Descargar PDF</button>
+  </form>
+
+  <canvas id="qrCanvas"></canvas>
+
+  <script>
+    // Función para previsualizar imágenes
+    function previewImage(event, previewId) {
+        const reader = new FileReader();
+        reader.onload = function(){
+            const output = document.getElementById(previewId);
+            output.src = reader.result;
+            output.style.display = 'block';
+        };
+        if (event.target.files[0]) {
+            reader.readAsDataURL(event.target.files[0]);
+        } else {
+            document.getElementById(previewId).style.display = 'none';
+        }
+    }
+
+    // Función para obtener la imagen como Base64
+    function getImageBase64(inputId) {
+        return new Promise((resolve, reject) => {
+            const input = document.getElementById(inputId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                resolve(''); // Resuelve con cadena vacía si no hay archivo
+            }
+        });
+    }
+
+    async function generarQR() {
+      const nombre = document.getElementById("nombre").value;
+      const telefono = document.getElementById("telefono").value;
+      const ubicacion = document.getElementById("ubicacion").value;
+      const emprendimiento = document.getElementById("emprendimiento").value;
+      const descripcion = document.getElementById("descripcion").value;
+      const instagramUser = document.getElementById("instagram").value;
+      const descripcionProducto1 = document.getElementById("descripcionProducto1").value;
+      const descripcionProducto2 = document.getElementById("descripcionProducto2").value;
+      const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+      const formato = document.querySelector('input[name="formatoQR"]:checked').value;
+
+      const logoBase64 = await getImageBase64("logoUpload");
+      const producto1Base64 = await getImageBase64("producto1Upload");
+      const producto2Base64 = await getImageBase64("producto2Upload");
+
+      let datosQR = "";
+
+      if (formato === "1") {
+        datosQR = instagramUrl; // Solo link
+      } else {
+        datosQR = `
+Nombre: ${nombre}
+Teléfono: ${telefono}
+Ubicación: ${ubicacion}
+Emprendimiento: ${emprendimiento}
+Descripción: ${descripcion}
+Instagram: ${instagramUser}
+Link de Instagram: ${instagramUrl}
+Logo: ${logoBase64 ? ' [Imagen Base64 - reducir tamaño para mejor lectura del QR] ' : 'No hay logo'}
+Producto 1: ${descripcionProducto1} ${producto1Base64 ? ' [Imagen Base64 - reducir tamaño para mejor lectura del QR] ' : ''}
+Producto 2: ${descripcionProducto2} ${producto2Base64 ? ' [Imagen Base64 - reducir tamaño para mejor lectura del QR] ' : ''}
+        `;
+      }
+
+      if (datosQR) {
+        QRCode.toCanvas(document.getElementById("qrCanvas"), datosQR, { width: 300 }, function (error) {
+          if (error) console.error(error);
+          console.log("QR generado correctamente ✅");
+        });
+      }
+    }
+
+    async function generarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      const nombre = document.getElementById("nombre").value;
+      const telefono = document.getElementById("telefono").value;
+      const ubicacion = document.getElementById("ubicacion").value;
+      const emprendimiento = document.getElementById("emprendimiento").value;
+      const descripcion = document.getElementById("descripcion").value;
+      const instagramUser = document.getElementById("instagram").value;
+      const descripcionProducto1 = document.getElementById("descripcionProducto1").value;
+      const descripcionProducto2 = document.getElementById("descripcionProducto2").value;
+      const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+      
+      const logoBase64 = await getImageBase64("logoUpload");
+      const producto1Base64 = await getImageBase64("producto1Upload");
+      const producto2Base64 = await getImageBase64("producto2Upload");
+
+      let y = 20;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("Información del Emprendimiento", 10, y);
+      y += 10;
