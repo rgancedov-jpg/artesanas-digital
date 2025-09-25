@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil Digital - Ministerio de la Mujer</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f9f9f9;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 {
+            color: #4a148c;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .subtitulo {
+            color: #6a1b9a;
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        form {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 15px;
+            display: block;
+            color: #333;
+        }
+        input[type="text"], input[type="file"], textarea {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: #6a1b9a;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 150px;
+        }
+        .btn:hover {
+            background-color: #4a148c;
+        }
+        .opciones {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .opciones b {
+            font-size: 1.1rem;
+            color: #4a148c;
+        }
+        .opciones label {
+            font-weight: normal;
+            margin-top: 5px;
+            color: #333;
+            display: block;
+        }
+        .opciones input[type="radio"] {
+            margin-right: 8px;
+        }
+        #qrDisplay {
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        #qrCanvas {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+        }
+        #qrMensaje {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .product-gallery {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .preview-item {
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .preview-item img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-bottom: 5px;
+        }
+        .preview-item .description {
+            font-size: 0.8rem;
+            color: #555;
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ministerio de la Mujer</h1>
+    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformación digital</p>
+
+    <form id="dataForm">
+        <section>
+            <label for="nombre">Nombre de la Emprendedora</label>
+            <input type="text" id="nombre" value="Ana María Rodríguez" required />
+
+            <label for="telefono">Número de Teléfono</label>
+            <input type="text" id="telefono" value="6543-2109" required />
+
+            <label for="ubicacion">Ubicación del Emprendimiento</label>
+            <input type="text" id="ubicacion" value="Ciudad de Panamá, Panamá" required />
+
+            <label for="nombreEmprendimiento">Nombre del emprendimiento</label>
+            <input type="text" id="nombreEmprendimiento" value="Artesanías Panameñas" required />
+        </section>
+
+        <section>
+            <label for="logo">Logo del emprendimiento</label>
+            <input type="file" id="logo" accept="image/*" />
+            <div id="logoPreview" class="preview-container"></div>
+
+            <label for="descripcion">Descripción de sus productos</label>
+            <textarea id="descripcion" required>Somos un emprendimiento que se especializa en la creación de productos artesanales únicos, inspirados en la rica cultura y tradiciones de Panamá.</textarea>
+
+            <label for="instagram">Instagram del negocio</label>
+            <input type="text" id="instagram" value="@artesanias_panamenas" required />
+        </section>
+
+        <div class="product-gallery">
+            <h3>Productos de Muestra</h3>
+            <label for="producto1">Producto 1</label>
+            <input type="file" id="producto1" accept="image/*" />
+            <input type="text" id="descProducto1" placeholder="Descripción Producto 1" value="Bolso de fibra natural" />
+
+            <label for="producto2">Producto 2</label>
+            <input type="file" id="producto2" accept="image/*" />
+            <input type="text" id="descProducto2" placeholder="Descripción Producto 2" value="Cuadro de arte Emberá" />
+        </div>
+        
+        <div id="productPreviews" class="preview-container"></div>
+        
+        <div class="opciones">
+            <b>Formato del QR:</b><br>
+            <label><input type="radio" name="formatoQR" value="1" checked> Solo Instagram directo</label><br>
+            <label><input type="radio" name="formatoQR" value="2"> Todos los datos + Instagram</label>
+        </div>
+        
+        <div class="btn-container">
+            <button type="button" class="btn" onclick="generarQR()">Generar QR</button>
+            <button type="button" class="btn" onclick="generarPDF()">Descargar PDF</button>
+        </div>
+    </form>
+
+    <div id="qrDisplay">
+        <canvas id="qrCanvas" style="display:none;"></canvas>
+        <div id="qrMensaje"></div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+
+        function validarCampos() {
+            const form = document.getElementById("dataForm");
+            if (!form.checkValidity()) {
+                alert("Por favor, rellene todos los campos obligatorios.");
+                form.reportValidity();
+                return false;
+            }
+            return true;
+        }
+
+        function generarDatosQR() {
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagramUser = document.getElementById("instagram").value.trim();
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            const formato = document.querySelector('input[name="formatoQR"]:checked').value;
+
+            if (formato === "1") {
+                return instagramUrl;
+            } else {
+                return `
+Nombre: ${nombre}
+Teléfono: ${telefono}
+Ubicación: ${ubicacion}
+Emprendimiento: ${nombreEmprendimiento}
+Descripción: ${descripcion}
+Instagram: ${instagramUser}
+Link: ${instagramUrl}
+                `;
+            }
+        }
+
+        // Corregido: Las funciones ya no están dentro de un bloque 'async'
+        function generarQR() {
+            if (!validarCampos()) return;
+            
+            const datosQR = generarDatosQR();
+            const qrCanvas = document.getElementById("qrCanvas");
+            const qrMensaje = document.getElementById("qrMensaje");
+
+            QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
+                if (error) {
+                    console.error(error);
+                    qrMensaje.textContent = "Error al generar el QR.";
+                    qrCanvas.style.display = 'none';
+                } else {
+                    qrMensaje.textContent = "QR generado correctamente ✅";
+                    qrCanvas.style.display = 'block';
+                }
+            });
+        }
+
+        async function generarPDF() {
+            if (!validarCampos()) return;
+            
+            const qrCanvas = document.getElementById("qrCanvas");
+            const qrMensaje = document.getElementById("qrMensaje");
+
+            const datosQR = generarDatosQR();
+            try {
+                await new Promise((resolve, reject) => {
+                    QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
+                        if (error) {
+                            reject("Error al generar el QR para el PDF.");
+                        } else {
+                            resolve();
+                        }
+                    });
+                });
+                qrMensaje.textContent = "QR para PDF generado correctamente ✅";
+                qrCanvas.style.display = 'block'; 
+            } catch (error) {
+                alert(error);
+                return;
+            }
+            
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagramUser = document.getElementById("instagram").value.trim();
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            const logoInput = document.getElementById("logo");
+            const producto1Input = document.getElementById("producto1");
+            const producto2Input = document.getElementById("producto2");
+            const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
+            const descProducto2 = document.getElementById("descProducto2").value.trim() || "Producto 2";
+            
+            const doc = new jsPDF();
+            const qrImg = qrCanvas.toDataURL("image/png");
+
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Ministerio de la Mujer", 20, 20);
+            doc.setFontSize(12);
+            doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 20, 28);
+            doc.setFontSize(14);
+            doc.text("Perfil Digital - Artesanas y Emprendedoras", 20, 40);
+            doc.addImage(qrImg, "PNG", 140, 30, 60, 60); 
+
+            let yOffset = 55;
+            doc.setFontSize(12);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Nombre de la Emprendedora: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${nombre}`, 20, yOffset + 5);
+            yOffset += 15;
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Teléfono: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${telefono}`, 20, yOffset + 5);
+            yOffset += 15;
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Ubicación: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${ubicacion}`, 20, yOffset + 5);
+            yOffset += 15;
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Nombre del Emprendimiento: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${nombreEmprendimiento}`, 20, yOffset + 5);
+            yOffset += 20;
+
+            // Función para agregar la imagen del logo
+            async function addLogo() {
+                if (logoInput.files[0]) {
+                    const titleText = "Logo del Emprendimiento";
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(titleText, 20, yOffset);
+                    doc.setFont('helvetica', 'normal');
+                    const boxWidth = 44;
+                    const boxHeight = 44;
+                    const imgWidth = 38; 
+                    const imgHeight = 38; 
+                    const imgX = 20 + (boxWidth - imgWidth) / 2;
+                    const imgY = yOffset + 5 + (boxHeight - imgHeight) / 2;
+                    
+                    doc.rect(18, yOffset + 5, boxWidth, boxHeight); 
+                    yOffset += 5; 
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                doc.addImage(e.target.result, "PNG", imgX, imgY, imgWidth, imgHeight); 
+                                yOffset += 50; 
+                                resolve();
+                            } catch (err) {
+                                reject(err);
+                            }
+                        };
+                        reader.readAsDataURL(logoInput.files[0]);
+                    });
+                }
+                return Promise.resolve();
+            }
+
+            // Función para agregar la descripción y el Instagram
+            function addMainText() {
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Descripción: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                
+                const splitDescription = doc.splitTextToSize(descripcion, 170);
+                doc.text(splitDescription, 20, yOffset + 5);
+                yOffset += (splitDescription.length * 5) + 5;
+
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Instagram: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.text(instagramUser, 20, yOffset + 5);
+                yOffset += 15;
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Link: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.textWithLink(instagramUrl, 20, yOffset + 5, { url: instagramUrl });
+                yOffset += 20;
+            }
+
+            // Función para agregar las imágenes de los productos
+            async function addProducts() {
+                doc.setFont('helvetica', 'bold');
+                doc.text("Productos de Muestra", 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+
+                const boxX = 18;
+                const boxY = yOffset + 5;
+                const boxWidth = 120;
+                const boxHeight = 65;
+                
+                doc.rect(boxX, boxY, boxWidth, boxHeight);
+                yOffset += 10;
+                
+                const productPromises = [];
+
+                if (producto1Input.files[0]) {
+                    productPromises.push(new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const imgWidth = 40;
+                            const imgHeight = 40;
+                            const imgX = boxX + 2;
+                            const imgY = yOffset + 5;
+                            doc.addImage(e.target.result, "PNG", imgX, imgY, imgWidth, imgHeight);
+                            
+                            doc.setFontSize(8); 
+                            const textWidth = doc.getStringUnitWidth(descProducto1) * 8 / doc.internal.scaleFactor; 
+                            const textX = imgX + (imgWidth - textWidth) / 2;
+                            doc.text(descProducto1, textX, imgY + 45);
+                            resolve();
+                        };
+                        reader.readAsDataURL(producto1Input.files[0]);
+                    }));
+                } else {
+                    productPromises.push(Promise.resolve());
+                }
+
+                if (producto2Input.files[0]) {
+                    productPromises.push(new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const imgWidth = 40;
+                            const imgHeight = 40;
+                            const imgX = boxX + 60;
+                            const imgY = yOffset + 5;
+                            doc.addImage(e.target.result, "PNG", imgX, imgY, imgWidth, imgHeight);
+                            
+                            doc.setFontSize(8);
+                            const textWidth = doc.getStringUnitWidth(descProducto2) * 8 / doc.internal.scaleFactor;
+                            const textX = imgX + (imgWidth - textWidth) / 2;
+                            doc.text(descProducto2, textX, imgY + 45);
+                            resolve();
+                        };
+                        reader.readAsDataURL(producto2Input.files[0]);
+                    }));
+                } else {
+            productPromises.push(Promise.resolve());
+                }
+
+                return Promise.all(productPromises);
+            }
+
+            try {
+                await addLogo();
+                addMainText();
+                await addProducts();
+                doc.save(`${nombreEmprendimiento}_perfil.pdf`);
+            } catch (err) {
+                alert("Hubo un error al generar el PDF. Por favor, inténtelo de nuevo.");
+                console.error(err);
+            }
+        }
+
+        // Funcionalidad de vista previa
+        function displayPreview(file, description, containerId) {
+            const container = document.getElementById(containerId);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const item = document.createElement("div");
+                item.className = "preview-item";
+
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.alt = description;
+                item.appendChild(img);
+
+                const desc = document.createElement("p");
+                desc.className = "description";
+                desc.textContent = description;
+                item.appendChild(desc);
+
+                container.appendChild(item);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateProductPreviews() {
+            const container = document.getElementById("productPreviews");
+            container.innerHTML = "";
+            const producto1Input = document.getElementById("producto1");
+            const producto2Input = document.getElementById("producto2");
+            const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
+            const descProducto2 = document.getElementById("descProducto2").value.trim() || "Producto 2";
+
+            if (producto1Input.files && producto1Input.files[0]) {
+                displayPreview(producto1Input.files[0], descProducto1, "productPreviews");
+            }
+            if (producto2Input.files && producto2Input.files[0]) {
+                displayPreview(producto2Input.files[0], descProducto2, "productPreviews");
+            }
+        }
+        
+        document.getElementById("logo").addEventListener("change", function() {
+            const container = document.getElementById("logoPreview");
+            container.innerHTML = "";
+            if (this.files && this.files[0]) {
+                displayPreview(this.files[0], "Logo del emprendimiento", "logoPreview");
+            }
+        });
+
+        document.getElementById("producto1").addEventListener("change", updateProductPreviews);
+        document.getElementById("descProducto1").addEventListener("input", updateProductPreviews);
+        document.getElementById("producto2").addEventListener("change", updateProductPreviews);
+        document.getElementById("descProducto2").addEventListener("input", updateProductPreviews);
+    </script>
+</body>
+</html>
