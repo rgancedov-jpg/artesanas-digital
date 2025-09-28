@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil Digital - Ministerio de la Mujer</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f9f9f9;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 {
+            color: #4a148c; /* Violeta oscuro */
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .subtitulo {
+            color: #6a1b9a; /* Violeta medio */
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        #headerLogoDisplay {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #headerLogoDisplay img {
+            max-width: 150px;
+            height: auto;
+        }
+        form {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 15px;
+            display: block;
+            color: #333;
+        }
+        input[type="text"], input[type="file"], input[type="email"], textarea {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: #6a1b9a; /* Violeta principal */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+        .btn:hover {
+            background-color: #4a148c; /* Violeta oscuro hover */
+        }
+        .btn-save {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: #28a745; /* Verde para guardar */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+        .btn-save:hover { background-color: #198c3a; }
+        
+        .btn-delete {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: #dc3545; /* Rojo para borrar */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+        .btn-delete:hover { background-color: #c82333; }
+
+        .opciones {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .opciones b {
+            font-size: 1.1rem;
+            color: #4a148c;
+        }
+        .opciones label {
+            font-weight: normal;
+            margin-top: 5px;
+            color: #333;
+            display: block;
+        }
+        .opciones input[type="radio"] {
+            margin-right: 8px;
+        }
+        #qrDisplay {
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        #qrCanvas {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+        }
+        #qrMensaje {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .product-gallery {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .preview-item {
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .preview-item img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-bottom: 5px;
+        }
+        .preview-item .description {
+            font-size: 0.8rem;
+            color: #555;
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
+        }
+    </style>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
+
+        // =================================================================================
+        // ATENCIÓN: REEMPLAZA LOS VALORES CON TU CONFIGURACIÓN REAL DE FIREBASE
+        // =================================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
+            authDomain: "artesanas-panama-digital.firebaseapp.com", 
+            projectId: "artesanas-panama-digital", 
+            storageBucket: "artesanas-panama-digital.firebasestorage.app", 
+            messagingSenderId: "216158084302", 
+            appId: "1:216158084302:web:e3c38b4a1a7234c7a8449f", 
+            measurementId: "G-SQPMWH7G50" 
+        };
+        // =================================================================================
+        // =================================================================================
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // ======================== FUNCIONES AUXILIARES ========================
+        
+        /**
+         * Genera un código único y amigable (Ej: ARO-5219)
+         * - Prefijo: Primeras 3 letras de iniciales del nombre completo.
+         * - Sufijo: Últimos 4 dígitos del teléfono.
+         */
+        function generarCodigoAmigableCompleto(nombreCompleto, telefono) {
+            if (!nombreCompleto || !telefono) return "";
+
+            const partes = nombreCompleto.trim().toUpperCase().split(/\s+/);
+            let prefijo = "";
+
+            // Lógica para obtener hasta 3 letras (iniciales)
+            for (let i = 0; i < partes.length && prefijo.length < 3; i++) {
+                if (partes[i].length > 0) {
+                    // Si es la primera parte (nombre), toma la primera letra
+                    if (i === 0) {
+                        prefijo += partes[i][0];
+                    } 
+                    // Si son partes siguientes (apellidos), intenta tomar dos letras para un prefijo más distintivo
+                    else if (prefijo.length === 1 && partes[i].length >= 2) {
+                        prefijo += partes[i].substring(0, 2);
+                    } 
+                    // Si ya tiene más de una letra o la palabra es muy corta, toma solo la inicial
+                    else if (prefijo.length < 3) {
+                        prefijo += partes[i][0];
+                    }
+                }
+            }
+            
+            // Asegura que el prefijo tenga 3 letras o el máximo posible
+            prefijo = prefijo.substring(0, 3).padEnd(3, 'X'); 
+
+            // Sufijo: Últimos 4 dígitos del teléfono
+            const soloNumeros = telefono.replace(/[^0-9]/g, ''); 
+            const sufijo = soloNumeros.slice(-4).padStart(4, '0'); 
+
+            return `${prefijo.toUpperCase()}-${sufijo}`; 
+        }
+
+        async function subirImagenYObtenerURL(file, carpeta) {
+            if (!file) return null;
+            const safeName = file.name.replace(/\s+/g, "_");
+            const nombre = `${Date.now()}_${safeName}`;
+            const ruta = `${carpeta}/${nombre}`;
+            const storageRef = ref(storage, ruta);
+            await uploadBytes(storageRef, file);
+            return await getDownloadURL(storageRef);
+        }
+
+        async function borrarImagenDeStorage(url) {
+            if (!url || typeof url !== 'string' || !url.includes('firebasestorage')) return;
+            try {
+                const storageRef = ref(storage, url);
+                await deleteObject(storageRef);
+            } catch (error) {
+                if (error.code !== 'storage/object-not-found') {
+                    console.warn(`Error al borrar la imagen en la URL ${url}:`, error);
+                }
+            }
+        }
+
+        function llenarFormulario(data, docId) {
+            document.getElementById("docId").value = docId || ""; 
+            document.getElementById("nombre").value = data.nombre || "";
+            document.getElementById("telefono").value = data.telefono || "";
+            document.getElementById("ubicacion").value = data.ubicacion || "";
+            document.getElementById("nombreEmprendimiento").value = data.nombreEmprendimiento || "";
+            document.getElementById("descripcion").value = data.descripcion || "";
+            document.getElementById("instagram").value = data.instagram || "";
+            document.getElementById("codigoSecuencial").value = data.codigoSecuencial || ""; 
+            
+            document.getElementById("descProducto1").value = data.productos?.[0]?.descripcion || "";
+            document.getElementById("descProducto2").value = data.productos?.[1]?.descripcion || "";
+
+            alert(`✅ Perfil de ${data.nombreEmprendimiento} cargado para edición.`);
+        }
+        
+        // ======================== FUNCIONES PRINCIPALES DE FIREBASE (CRUD) ========================
+
+        // ** FUNCIÓN CLAVE **: GUARDA O ACTUALIZA EN LA BASE DE DATOS
+        window.guardarEnBD = async function () {
+            const form = document.getElementById("dataForm");
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                alert("Por favor, rellene los campos obligatorios antes de guardar.");
+                return;
+            }
+
+            const docId = document.getElementById("docId").value.trim(); 
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+                
+            if (!nombre || !telefono) {
+                alert("ERROR: Debe ingresar el Nombre y Teléfono.");
+                return;
+            }
+
+            // Generar el código amigable antes de guardar
+            const codigoSecuencial = generarCodigoAmigableCompleto(nombre, telefono); 
+            document.getElementById("codigoSecuencial").value = codigoSecuencial; // Se establece el código aquí
+
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagram = document.getElementById("instagram").value.trim();
+            const logoFile = document.getElementById("logo").files[0];
+            const producto1File = document.getElementById("producto1").files[0];
+            const producto2File = document.getElementById("producto2").files[0];
+
+            const btnGuardar = document.getElementById("btnGuardarBD");
+            const originalText = btnGuardar ? btnGuardar.textContent : null;
+            if (btnGuardar) {
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = docId ? "Actualizando..." : "Guardando...";
+            }
+
+            try {
+                // Subir imágenes en paralelo
+                const [logoURL, producto1URL, producto2URL] = await Promise.all([
+                    subirImagenYObtenerURL(logoFile, "logos"),
+                    subirImagenYObtenerURL(producto1File, "productos"),
+                    subirImagenYObtenerURL(producto2File, "productos")
+                ]);
+
+                const docData = {
+                    nombre, telefono, ubicacion, nombreEmprendimiento, descripcion, instagram,
+                    codigoSecuencial,
+                    logoURL: logoURL || null,
+                    productos: [
+                        { url: producto1URL || null, descripcion: document.getElementById("descProducto1").value.trim() || null },
+                        { url: producto2URL || null, descripcion: document.getElementById("descProducto2").value.trim() || null }
+                    ],
+                    updatedAt: new Date().toISOString()
+                };
+                
+                if (docId) {
+                    await updateDoc(doc(db, "perfiles", docId), docData);
+                    alert("✅ Registro actualizado correctamente (Código: " + codigoSecuencial + ")");
+                } else {
+                    const docRef = await addDoc(collection(db, "perfiles"), {
+                        ...docData,
+                        createdAt: new Date().toISOString()
+                    });
+                    document.getElementById("docId").value = docRef.id; 
+                    alert("✅ Datos guardados correctamente (Código: " + codigoSecuencial + ")");
+                }
+
+                // Generar el QR inmediatamente después de guardar/actualizar
+                generarQR();
+
+            } catch (err) {
+                console.error("Error guardando en Firebase:", err);
+                alert("❌ Ocurrió un error al guardar en Firebase. Revisa la consola (F12).");
+            } finally {
+                if (btnGuardar) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.textContent = originalText;
+                }
+            }
+        };
+
+        window.buscarPorCodigoSecuencial = async function () {
+            const codigo = document.getElementById("codigoSecuencial").value.trim().toUpperCase();
+            
+            if (!codigo) {
+                alert("Por favor, ingrese el Código de Emprendimiento (Ej: ARO-5219) para buscar.");
+                return;
+            }
+            
+            const btnBuscar = document.querySelector('button[onclick="buscarPorCodigoSecuencial()"]');
+            const originalText = btnBuscar.textContent;
+            btnBuscar.disabled = true;
+            btnBuscar.textContent = "Buscando...";
+
+            try {
+                const q = query(collection(db, "perfiles"), where("codigoSecuencial", "==", codigo));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    alert(`❌ No se encontró ningún perfil con el código: ${codigo}.`);
+                    document.getElementById("docId").value = ""; 
+                    document.getElementById("dataForm").reset(); 
+                    document.getElementById("codigoSecuencial").value = codigo;
+                } else {
+                    const docSnap = querySnapshot.docs[0];
+                    llenarFormulario(docSnap.data(), docSnap.id); 
+                }
+
+            } catch (error) {
+                console.error("Error al buscar el documento:", error);
+                alert("❌ Ocurrió un error al intentar la búsqueda.");
+            } finally {
+                btnBuscar.disabled = false;
+                btnBuscar.textContent = originalText;
+            }
+        };
+
+        window.borrarArtesana = async function () {
+            const docId = document.getElementById("docId").value.trim();
+            const codigo = document.getElementById("codigoSecuencial").value.trim();
+
+            if (!docId) {
+                alert("❌ Error: No se ha cargado ningún perfil para borrar. Use el botón 'Buscar' primero.");
+                return;
+            }
+
+            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE el registro con código ${codigo}? Esta acción es irreversible y eliminará también las imágenes asociadas.`)) {
+                return;
+            }
+
+            const btnBorrar = document.getElementById("btnBorrarBD");
+            const originalText = btnBorrar.textContent;
+            btnBorrar.disabled = true;
+            btnBorrar.textContent = "Borrando...";
+
+            try {
+                const docRef = doc(db, "perfiles", docId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const deletePromises = [];
+                    deletePromises.push(borrarImagenDeStorage(data.logoURL));
+                    if (data.productos) {
+                        data.productos.forEach(p => {
+                            deletePromises.push(borrarImagenDeStorage(p.url));
+                        });
+                    }
+                    await Promise.all(deletePromises); // Elimina imágenes del Storage
+                    await deleteDoc(docRef); // Elimina el registro de Firestore
+
+                    document.getElementById("dataForm").reset();
+                    document.getElementById("docId").value = "";
+                    document.getElementById("codigoSecuencial").value = "";
+                    alert(`✅ El registro con código ${codigo} ha sido borrado exitosamente.`);
+                } else {
+                    alert("❌ Error: El documento no existe en Firestore, pero el formulario se ha limpiado.");
+                    document.getElementById("dataForm").reset();
+                    document.getElementById("docId").value = "";
+                }
+
+            } catch (error) {
+                console.error("Error al borrar el registro:", error);
+                alert(`❌ Ocurrió un error al intentar borrar el registro: ${error.message}`);
+            } finally {
+                btnBorrar.disabled = false;
+                btnBorrar.textContent = originalText;
+            }
+        };
+
+        // ======================== LÓGICA DE QR Y PDF ========================
+        const { jsPDF } = window.jspdf;
+
+        function validarCampos() {
+            const form = document.getElementById("dataForm");
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+            return true;
+        }
+
+        function generarDatosQR() {
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagramUser = document.getElementById("instagram").value.trim();
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            const formato = document.querySelector('input[name="formatoQR"]:checked').value;
+
+            if (formato === "1") {
+                return instagramUrl;
+            } else {
+                return `
+Nombre: ${nombre}
+Teléfono: ${telefono}
+Ubicación: ${ubicacion}
+Emprendimiento: ${nombreEmprendimiento}
+Descripción: ${descripcion}
+Instagram: ${instagramUser}
+Link: ${instagramUrl}
+                `;
+            }
+        }
+
+        window.generarQR = function() {
+            if (!validarCampos()) return;
+            
+            const datosQR = generarDatosQR();
+            const qrCanvas = document.getElementById("qrCanvas");
+            const qrMensaje = document.getElementById("qrMensaje");
+            qrCanvas.style.display = 'none';
+
+            QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
+                if (error) {
+                    qrMensaje.textContent = "Error al generar el QR.";
+                } else {
+                    qrMensaje.textContent = "QR generado correctamente ✅";
+                    qrCanvas.style.display = 'block';
+                }
+            });
+        }
+
+        window.generarPDF = async function() {
+            if (!validarCampos()) return;
+            
+            const qrCanvas = document.getElementById("qrCanvas");
+            const qrMensaje = document.getElementById("qrMensaje");
+
+            const datosQR = generarDatosQR();
+            try {
+                // 1. Generar QR para el PDF (necesario para la imagen)
+                await new Promise((resolve, reject) => {
+                    QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
+                        if (error) reject("Error al generar el QR para el PDF.");
+                        else resolve();
+                    });
+                });
+                qrMensaje.textContent = "QR para PDF generado correctamente ✅";
+            } catch (error) {
+                alert(error);
+                return;
+            }
+            
+            // 2. Obtener datos del formulario
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagramUser = document.getElementById("instagram").value.trim();
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            const logoInput = document.getElementById("logo");
+            const producto1Input = document.getElementById("producto1");
+            const producto2Input = document.getElementById("producto2");
+            const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
+            const descProducto2 = document.getElementById("descProducto2").value.trim() || "Producto 2";
+            
+            const doc = new jsPDF();
+            const qrImg = qrCanvas.toDataURL("image/png");
+            const defaultLogoPdfUrl = document.getElementById("defaultLogo").src;
+
+            // 3. Diseño del PDF (A4)
+            if (defaultLogoPdfUrl) {
+                doc.addImage(defaultLogoPdfUrl, "PNG", 20, 15, 30, 30);
+            }
+
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Ministerio de la Mujer", 60, 20);
+            doc.setFontSize(12);
+            doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 60, 28);
+            doc.setFontSize(14);
+            doc.text("Perfil Digital - Artesanas y Emprendedoras", 60, 40);
+            
+            doc.addImage(qrImg, "PNG", 140, 50, 60, 60); 
+
+            let yOffset = 55;
+            doc.setFontSize(12);
+            
+            const addText = (title, content) => {
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.text(content, 20, yOffset + 5);
+                yOffset += 15;
+            };
+
+            addText(`Nombre de la Emprendedora: `, nombre);
+            addText(`Teléfono: `, telefono);
+            addText(`Ubicación: `, ubicacion);
+            yOffset += 5;
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Nombre del Emprendimiento: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${nombreEmprendimiento}`, 20, yOffset + 5);
+            yOffset += 20;
+
+            async function addLogoIfUploaded() {
+                if (logoInput.files[0]) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.text("Logo del Emprendimiento", 20, yOffset - 10); 
+                    doc.setFont('helvetica', 'normal');
+                    
+                    const imgX = 20; 
+                    const imgY = yOffset - 5; 
+                    const imgWidth = 50; 
+                    const imgHeight = 50; 
+                    
+                    doc.rect(imgX - 2, imgY - 2, imgWidth + 4, imgHeight + 4); 
+                    
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                doc.addImage(e.target.result, "PNG", imgX, imgY, imgWidth, imgHeight); 
+                                yOffset += 55; 
+                                resolve();
+                            } catch (err) {
+                                reject(err);
+                            }
+                        };
+                        reader.readAsDataURL(logoInput.files[0]);
+                    });
+                }
+                return Promise.resolve();
+            }
+
+            function addMainText() {
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Descripción: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                
+                const splitDescription = doc.splitTextToSize(descripcion, 170);
+                doc.text(splitDescription, 20, yOffset + 5);
+                yOffset += (splitDescription.length * 5) + 5;
+
+                yOffset += 5; 
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Instagram: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.text(instagramUser, 20, yOffset + 5);
+                yOffset += 15;
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Link: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.textWithLink(instagramUrl, 20, yOffset + 5, { url: instagramUrl });
+                yOffset += 20;
+            }
+
+            async function addProducts() {
+                doc.setFont('helvetica', 'bold');
+                doc.text("Productos de Muestra", 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+
+                const boxX = 18;
+                const boxY = yOffset + 3;
+                const boxWidth = 120;
+                const boxHeight = 60;
+                
+                doc.rect(boxX, boxY, boxWidth, boxHeight); 
+                yOffset += 10;
+                
+                const productPromises = [];
+
+                const addProductImage = (fileInput, description, xOffset) => {
+                    if (fileInput.files[0]) {
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const imgX = boxX + xOffset;
+                                const imgY = yOffset + 1.5;                         
+                                doc.addImage(e.target.result, "PNG", imgX, imgY, 40, 40);
+                                
+                                doc.setFontSize(8); 
+                                doc.text(description, imgX + 20, imgY + 45, {align: 'center'}); 
+                                resolve();
+                            };
+                            reader.readAsDataURL(fileInput.files[0]);
+                        });
+                    }
+                    return Promise.resolve();
+                };
+
+                productPromises.push(addProductImage(producto1Input, descProducto1, 2));
+                productPromises.push(addProductImage(producto2Input, descProducto2, 60));
+
+                return Promise.all(productPromises);
+            }
+
+            try {
+                await addLogoIfUploaded(); 
+                addMainText();
+                
+                if (producto1Input.files[0] || producto2Input.files[0]) {
+                    await addProducts();
+                }
+
+                doc.save(`${nombreEmprendimiento}_perfil.pdf`);
+            } catch (err) {
+                alert("Hubo un error al generar el PDF. Por favor, inténtelo de nuevo.");
+                console.error(err);
+            }
+        }
+
+        // ======================== LÓGICA DE PREVISUALIZACIÓN DE IMÁGENES ========================
+
+        function displayPreview(file, description, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const item = document.createElement("div");
+                item.className = "preview-item";
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.alt = description;
+                item.appendChild(img);
+                const desc = document.createElement("p");
+                desc.className = "description";
+                desc.textContent = description;
+                item.appendChild(desc);
+                container.appendChild(item);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateProductPreviews() {
+            const container = document.getElementById("productPreviews");
+            container.innerHTML = "";
+            const producto1Input = document.getElementById("producto1");
+            const producto2Input = document.getElementById("producto2");
+            const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
+            const descProducto2 = document.getElementById("descProducto2").value.trim() || "Producto 2";
+
+            if (producto1Input.files && producto1Input.files[0]) {
+                displayPreview(producto1Input.files[0], descProducto1, "productPreviews");
+            }
+            if (producto2Input.files && producto2Input.files[0]) {
+                displayPreview(producto2Input.files[0], descProducto2, "productPreviews");
+            }
+        }
+        
+        document.getElementById("logo").addEventListener("change", function() {
+            const container = document.getElementById("logoPreview");
+            container.innerHTML = "";
+            if (this.files && this.files[0]) {
+                displayPreview(this.files[0], "Logo del emprendimiento", "logoPreview");
+            }
+        });
+
+        document.getElementById("producto1").addEventListener("change", updateProductPreviews);
+        document.getElementById("descProducto1").addEventListener("input", updateProductPreviews);
+        document.getElementById("producto2").addEventListener("change", updateProductPreviews);
+        document.getElementById("descProducto2").addEventListener("input", updateProductPreviews);
+
+        window.onload = function() {
+            const defaultLogoImg = document.getElementById("defaultLogo");
+            const headerLogoDisplay = document.getElementById("headerLogoDisplay");
+            if (defaultLogoImg && headerLogoDisplay) {
+                const imgClone = defaultLogoImg.cloneNode(true);
+                imgClone.style.display = 'block';
+                imgClone.style.maxWidth = '150px'; 
+                imgClone.style.height = 'auto';
+                headerLogoDisplay.appendChild(imgClone);
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Ministerio de la Mujer</h1>
+    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformación digital</p>
+
+    <div id="headerLogoDisplay"></div>
+    
+    <img id="defaultLogo" src="https://raw.githubusercontent.com/rgancedov-jpg/artesanas-digital/main/logo-nuevo-1_midem.png" alt="Logo de Ven Emprende" style="display: none;">
+
+    <form id="dataForm">
+        <section>
+            <h3>Datos de la Emprendedora</h3>
+
+            <input type="hidden" id="docId" value="" />
+
+            <label for="codigoSecuencial">Código de Emprendimiento (Búsqueda)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="codigoSecuencial" placeholder="Ej: ARO-5219 (Iniciales-Teléfono)" style="flex-grow: 1;" />
+                <button type="button" class="btn" onclick="buscarPorCodigoSecuencial()" style="min-width: 100px;">Buscar 🔍</button>
+            </div>
+            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*El código se **genera automáticamente** al guardar/actualizar.</p>
+            
+
+            <label for="nombre">Nombre de la Emprendedora</label>
+            <input type="text" id="nombre" value="Ana María Rodríguez" required />
+
+            <label for="telefono">Número de Teléfono</label>
+            <input type="text" id="telefono" value="6543-2109" required />
+            
+            <label for="ubicacion">Ubicación del Emprendimiento</label>
+            <input type="text" id="ubicacion" value="Ciudad de Panamá, Panamá" required />
+
+            <label for="nombreEmprendimiento">Nombre del emprendimiento</label>
+            <input type="text" id="nombreEmprendimiento" value="Artesanías Panameñas" required />
+        </section>
+
+        <section>
+            <label for="logo">Sube un logo diferente (opcional)</label>
+            <input type="file" id="logo" accept="image/*" />
+            <div id="logoPreview" class="preview-container"></div>
+            
+            <label for="descripcion">Descripción de sus productos</label>
+            <textarea id="descripcion" required>Somos un emprendimiento que se especializa en la creación de productos artesanales únicos, inspirados en la rica cultura y tradiciones de Panamá.</textarea>
+
+            <label for="instagram">Instagram del negocio</label>
+            <input type="text" id="instagram" value="@artesanias_panamenas" required />
+        </section>
+
+        <div class="product-gallery">
+            <h3>Productos de Muestra</h3>
+            <label for="producto1">Producto 1</label>
+            <input type="file" id="producto1" accept="image/*" />
+            <input type="text" id="descProducto1" placeholder="Descripción Producto 1" value="Bolso de fibra natural" />
+
+            <label for="producto2">Producto 2</label>
+            <input type="file" id="producto2" accept="image/*" />
+            <input type="text" id="descProducto2" placeholder="Descripción Producto 2" value="Cuadro de arte Emberá" />
+        </div>
+        
+        <div id="productPreviews" class="preview-container"></div>
+        
+        <div class="opciones">
+            <b>Formato del QR:</b><br>
+            <label><input type="radio" name="formatoQR" value="1" checked> Solo Instagram directo</label><br>
+            <label><input type="radio" name="formatoQR" value="2"> Todos los datos + Instagram</label>
+        </div>
+        
+        <div class="btn-container">
+            <button type="button" class="btn" onclick="generarQR()">Generar QR</button>
+            <button type="button" class="btn" onclick="generarPDF()">Descargar PDF</button>
+            <button type="button" id="btnBorrarBD" class="btn-delete" onclick="borrarArtesana()">Borrar Registro</button>
+            <button type="button" id="btnGuardarBD" class="btn-save" onclick="guardarEnBD()">Guardar en BD</button>
+        </div>
+    </form>
+
+    <div id="qrDisplay">
+        <canvas id="qrCanvas" style="display:none;"></canvas>
+        <div id="qrMensaje"></div>
+    </div>
+</body>
+</html>
