@@ -7,11 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-        import { getFirestore, collection, doc, getDoc, query, getDocs, orderBy, startAfter, limit, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-
+        import { getFirestore, collection, doc, getDoc, query, getDocs, orderBy, startAfter, limit, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        
         // =================================================================================
-        // ATENCIÓN: REEMPLAZA LOS VALORES CON TU CONFIGURACIÓN REAL DE FIREBASE
-        // Mismos valores que en index.html
+        // CONFIGURACIÓN DE FIREBASE
         // =================================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
@@ -28,97 +27,151 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const perfilesRef = collection(db, "perfiles");
-
-        // Estado global para la navegación y paginación
+        // Estado global para la navegación y edición
         let lastVisible = null;
         let currentPage = 0;
         const PAGE_SIZE = 10;
-        let allRecords = []; // Almacena todos los IDs de los registros cargados para la navegación secuencial
+        let allRecords = []; 
         let currentRecordIndex = -1; 
+        let selectedDocId = null; 
+        let currentRecordData = {}; 
         
         // Elementos del DOM
         const tableBody = document.getElementById('tableBody');
         const detailPanel = document.getElementById('detailPanel');
         const searchInput = document.getElementById('searchInput');
-        const searchType = document.getElementById('searchType');
         const prevPageBtn = document.getElementById('prevPage');
         const nextPageBtn = document.getElementById('nextPage');
         const navPrevBtn = document.getElementById('navPrev');
         const navNextBtn = document.getElementById('navNext');
         const loadingIndicator = document.getElementById('loadingIndicator');
-
-        // ======================== FUNCIONES DE NAVEGACIÓN Y CARGA ========================
-
+        const editButtons = document.getElementById('editButtons'); 
+        const cancelButton = document.getElementById('cancelButton'); 
+        const saveButton = document.getElementById('saveButton'); 
+        
+        // ======================== FUNCIONES DE EDICIÓN Y GUARDADO ========================
         /**
-         * Carga los registros de la base de datos con paginación.
-         * @param {string} direction - 'next', 'prev', o 'initial'
+         * Alterna el panel de detalle entre el modo de visualización y el modo de edición.
          */
+        function toggleEditMode(isEditing) {
+            document.querySelectorAll('.view-display').forEach(el => el.classList.toggle('hidden', isEditing));
+            document.querySelectorAll('.edit-input').forEach(el => el.classList.toggle('hidden', !isEditing));
+            document.getElementById('viewButtonsContainer').classList.toggle('hidden', isEditing);
+            editButtons.classList.toggle('hidden', !isEditing);
+            navPrevBtn.disabled = isEditing;
+            navNextBtn.disabled = isEditing;
+        }
+        /**
+         * Recopila los datos del formulario de edición y actualiza Firestore.
+         */
+        window.guardarModificacion = async function() {
+            if (!selectedDocId) {
+                alert("No hay un perfil seleccionado para guardar.");
+                return;
+            }
+            if (!confirm("¿Está seguro de guardar los cambios?")) {
+                return;
+            }
+            loadingIndicator.classList.remove('hidden');
+            try {
+                // 1. Recolectar nuevos datos del formulario
+                const newNombre = document.getElementById('editArtesana').value.trim(); 
+                const newEmprendimiento = document.getElementById('editEmprendimiento').value.trim();
+                
+                const updatedData = {
+                    nombre: newNombre,
+                    nombreEmprendimiento: newEmprendimiento,
+                    telefono: document.getElementById('editTelefono').value.trim(),
+                    ubicacion: document.getElementById('editUbicacion').value.trim(),
+                    instagram: document.getElementById('editInstagram').value.trim(),
+                    descripcion: document.getElementById('editDescripcion').value.trim(),
+                    updatedAt: new Date().toISOString(),
+                    
+                    // Actualizar campos de indexación para la búsqueda
+                    nombre_lower: newNombre.toLowerCase(), 
+                    nombreEmprendimiento_lower: newEmprendimiento.toLowerCase(),
+                };
+                // 2. Realizar la actualización en Firestore
+                const docRef = doc(perfilesRef, selectedDocId);
+                await updateDoc(docRef, updatedData);
+                alert("✅ ¡Modificación guardada exitosamente!");
+                // 3. Recargar el registro actualizado
+                const docSnap = await getDoc(docRef);
+                selectRecord(selectedDocId, docSnap.data()); 
+                // 4. Volver a Modo Vista y refrescar la tabla
+                toggleEditMode(false); 
+                loadRecords('initial'); 
+            } catch (error) {
+                console.error("Error al guardar la modificación:", error);
+                alert(`❌ Ocurrió un error al guardar: ${error.message}`);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        };
+        
+        // ======================== FUNCIONES DE NAVEGACIÓN Y CARGA ========================
+        // La paginación tradicional se mantiene sin cambios, ordenada por nombreEmprendimiento
         window.loadRecords = async function (direction = 'initial') {
             loadingIndicator.classList.remove('hidden');
             let q;
-            let firstVisible = null;
-
             try {
-                // 1. Definir la consulta
                 if (direction === 'next' && lastVisible) {
                     q = query(perfilesRef, orderBy("nombreEmprendimiento"), startAfter(lastVisible), limit(PAGE_SIZE));
-                } else if (direction === 'initial' || direction === 'prev' || !lastVisible) {
-                    // Para 'initial' (o si falla 'prev')
+                } else {
                     q = query(perfilesRef, orderBy("nombreEmprendimiento"), limit(PAGE_SIZE));
                 }
-
                 const documentSnapshots = await getDocs(q);
-                
                 if (documentSnapshots.empty && direction !== 'initial') {
                     alert("No hay más registros para mostrar.");
                     loadingIndicator.classList.add('hidden');
                     return;
                 }
-                
-                // 2. Actualizar la tabla y el estado de paginación
                 tableBody.innerHTML = '';
                 allRecords = [];
-                
                 documentSnapshots.forEach(doc => {
                     const data = doc.data();
-                    data.docId = doc.id; // Añadir ID para la navegación
+                    data.docId = doc.id; 
                     allRecords.push(doc.id);
-
                     const row = tableBody.insertRow();
                     row.className = 'cursor-pointer hover:bg-violet-50 transition-colors';
-                    row.onclick = () => selectRecord(doc.id, doc.data());
-                    
-                    row.insertCell().textContent = data.codigoSecuencial || 'N/A';
+                    row.onclick = () => { selectRecord(doc.id, doc.data()); toggleEditMode(false); };
                     row.insertCell().textContent = data.nombreEmprendimiento || 'Sin Nombre';
-                    row.insertCell().textContent = data.nombre || 'N/A';
+                    row.insertCell().textContent = data.nombre || 'N/A'; 
                     row.insertCell().textContent = data.telefono || 'N/A';
                     row.insertCell().textContent = data.ubicacion || 'N/A';
-                    
-                    // Botón para borrar directamente desde la tabla (para administradores)
+                    // Celda de Acciones con botones de Modificar y Borrar
                     const actionsCell = row.insertCell();
+                    actionsCell.className = 'whitespace-nowrap';
+                    // Botón Modificar
+                    const modifyBtn = document.createElement('button');
+                    modifyBtn.textContent = '✏️ Modificar';
+                    modifyBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs transition-colors';
+                    modifyBtn.onclick = (e) => {
+                        e.stopPropagation(); 
+                        selectRecord(doc.id, doc.data()); 
+                        toggleEditMode(true); 
+                    };
+                    actionsCell.appendChild(modifyBtn);
+                    // Botón Borrar
                     const deleteBtn = document.createElement('button');
                     deleteBtn.textContent = '🗑️ Borrar';
-                    deleteBtn.className = 'bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs';
+                    deleteBtn.className = 'bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs ml-2 transition-colors';
                     deleteBtn.onclick = (e) => {
-                        e.stopPropagation(); // Evitar que se cargue el detalle
-                        borrarRegistro(doc.id, data.codigoSecuencial);
+                        e.stopPropagation(); 
+                        borrarRegistro(doc.id);
                     };
                     actionsCell.appendChild(deleteBtn);
                 });
-
-                // 3. Actualizar cursores para la siguiente y anterior página
+                // Actualizar cursores para paginación
                 if (!documentSnapshots.empty) {
                     lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1];
-                    firstVisible = documentSnapshots.docs[0];
                     if (direction === 'next') currentPage++;
                     if (direction === 'prev' && currentPage > 0) currentPage--;
                     if (direction === 'initial') currentPage = 0;
                 }
-                
                 document.getElementById('pageStatus').textContent = `Página ${currentPage + 1}`;
                 prevPageBtn.disabled = currentPage === 0;
                 nextPageBtn.disabled = documentSnapshots.empty || documentSnapshots.size < PAGE_SIZE;
-
             } catch (error) {
                 console.error("Error cargando registros:", error);
                 alert("Ocurrió un error al cargar la lista de perfiles.");
@@ -126,65 +179,83 @@
                 loadingIndicator.classList.add('hidden');
             }
         };
-        
         /**
-         * Realiza una búsqueda por Código Amigable o Nombre del Emprendimiento.
+         * Implementa la búsqueda flexible (incluye coincidencias parciales) sin usar el dropdown.
          */
         window.searchRecords = async function () {
             const searchTerm = searchInput.value.trim();
-            const field = searchType.value; // 'codigoSecuencial' o 'nombreEmprendimiento'
-
             if (!searchTerm) {
-                loadRecords('initial'); // Si está vacío, recarga la lista
+                loadRecords('initial'); 
                 return;
             }
-
             loadingIndicator.classList.remove('hidden');
-            
             try {
-                // La búsqueda por texto parcial es difícil en Firestore. Usaremos '=='
-                const q = query(perfilesRef, where(field, '==', searchTerm.toUpperCase()));
+                const lowerCaseSearch = searchTerm.toLowerCase();
+                
+                // 1. Obtener TODOS los documentos (necesario para una búsqueda flexible de múltiples campos)
+                let q = query(perfilesRef, orderBy("nombreEmprendimiento")); 
                 const querySnapshot = await getDocs(q);
-
                 tableBody.innerHTML = '';
                 allRecords = [];
-                
-                if (querySnapshot.empty) {
+                let matches = [];
+                // 2. Filtrado en el lado del cliente (flexible)
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const nombre = data.nombre?.toLowerCase() || '';
+                    const emprendimiento = data.nombreEmprendimiento?.toLowerCase() || '';
+                    const telefono = data.telefono || '';
+                    
+                    // Búsqueda flexible: Coincidencia parcial en nombre o emprendimiento O coincidencia exacta en teléfono.
+                    const match = nombre.includes(lowerCaseSearch) ||
+                                  emprendimiento.includes(lowerCaseSearch) ||
+                                  telefono === searchTerm; 
+                    if (match) {
+                        data.docId = doc.id;
+                        matches.push(data);
+                        allRecords.push(doc.id); // Llenar allRecords con IDs de los resultados para la navegación secuencial
+                    }
+                });
+                if (matches.length === 0) {
                     const row = tableBody.insertRow();
-                    row.insertCell(0).textContent = 'No se encontraron resultados.';
-                    row.cells[0].colSpan = 6;
+                    row.insertCell(0).textContent = `No se encontraron resultados para "${searchTerm}".`;
+                    row.cells[0].colSpan = 5; // Ajustado de 6 a 5 columnas
                     row.cells[0].className = 'text-center py-4';
                 } else {
-                    querySnapshot.forEach(doc => {
-                        const data = doc.data();
-                        data.docId = doc.id;
-                        allRecords.push(doc.id); // Guardar resultados de búsqueda para navegación
-
+                    matches.forEach(data => {
                         const row = tableBody.insertRow();
                         row.className = 'cursor-pointer hover:bg-violet-50 transition-colors';
-                        row.onclick = () => selectRecord(doc.id, doc.data());
-                        
-                        row.insertCell().textContent = data.codigoSecuencial || 'N/A';
+                        row.onclick = () => { selectRecord(data.docId, data); toggleEditMode(false); };
                         row.insertCell().textContent = data.nombreEmprendimiento || 'Sin Nombre';
                         row.insertCell().textContent = data.nombre || 'N/A';
                         row.insertCell().textContent = data.telefono || 'N/A';
                         row.insertCell().textContent = data.ubicacion || 'N/A';
-                        
                         const actionsCell = row.insertCell();
+                        actionsCell.className = 'whitespace-nowrap';
+                        // Botón Modificar
+                        const modifyBtn = document.createElement('button');
+                        modifyBtn.textContent = '✏️ Modificar';
+                        modifyBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs transition-colors';
+                        modifyBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            selectRecord(data.docId, data);
+                            toggleEditMode(true);
+                        };
+                        actionsCell.appendChild(modifyBtn);
+                        // Botón Borrar
                         const deleteBtn = document.createElement('button');
                         deleteBtn.textContent = '🗑️ Borrar';
-                        deleteBtn.className = 'bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs';
+                        deleteBtn.className = 'bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs ml-2 transition-colors';
                         deleteBtn.onclick = (e) => {
                             e.stopPropagation();
-                            borrarRegistro(doc.id, data.codigoSecuencial);
+                            borrarRegistro(data.docId);
                         };
                         actionsCell.appendChild(deleteBtn);
                     });
                 }
-                document.getElementById('pageStatus').textContent = `Resultados (${querySnapshot.size})`;
+                document.getElementById('pageStatus').textContent = `Resultados (${matches.length})`;
+                // Deshabilitar paginación cuando se muestran resultados de búsqueda
                 prevPageBtn.disabled = true;
                 nextPageBtn.disabled = true;
-
             } catch (error) {
                 console.error("Error en la búsqueda:", error);
                 alert("Ocurrió un error al realizar la búsqueda.");
@@ -192,30 +263,36 @@
                 loadingIndicator.classList.add('hidden');
             }
         };
-
         /**
-         * Carga el detalle del registro seleccionado en el panel lateral.
-         * @param {string} docId - ID del documento de Firestore.
-         * @param {object} data - Datos del documento.
+         * Carga el detalle del registro seleccionado y prepara los campos de edición.
          */
         function selectRecord(docId, data) {
+            selectedDocId = docId; 
+            currentRecordData = data; 
             currentRecordIndex = allRecords.findIndex(id => id === docId);
-
-            document.getElementById('detailCodigo').textContent = data.codigoSecuencial || 'N/A';
-            document.getElementById('detailEmprendimiento').textContent = data.nombreEmprendimiento || 'Sin Nombre';
-            document.getElementById('detailEmprendedora').textContent = data.nombre || 'N/A';
-            document.getElementById('detailTelefono').textContent = data.telefono || 'N/A';
-            document.getElementById('detailUbicacion').textContent = data.ubicacion || 'N/A';
-            document.getElementById('detailInstagram').textContent = data.instagram || 'N/A';
-            document.getElementById('detailDescripcion').textContent = data.descripcion || 'Sin descripción';
-            document.getElementById('detailCreatedAt').textContent = new Date(data.createdAt).toLocaleDateString() || 'N/A';
             
-            // Lógica de imágenes (solo muestra URL si existe)
+            // ELIMINADO: Se quita la visualización del ID técnico aquí.
+            // document.getElementById('detailCodigo').textContent = selectedDocId.substring(0, 5) + '...'; 
+            
+            // Resto de campos
+            document.getElementById('displayEmprendimiento').textContent = data.nombreEmprendimiento || 'Sin Nombre';
+            document.getElementById('editEmprendimiento').value = data.nombreEmprendimiento || '';
+            document.getElementById('displayArtesana').textContent = data.nombre || 'N/A';
+            document.getElementById('editArtesana').value = data.nombre || '';
+            document.getElementById('displayTelefono').textContent = data.telefono || 'N/A';
+            document.getElementById('editTelefono').value = data.telefono || '';
+            document.getElementById('displayUbicacion').textContent = data.ubicacion || 'N/A';
+            document.getElementById('editUbicacion').value = data.ubicacion || '';
+            document.getElementById('displayInstagram').textContent = data.instagram || 'N/A';
+            document.getElementById('editInstagram').value = data.instagram || '';
+            document.getElementById('displayDescripcion').textContent = data.descripcion || 'Sin descripción';
+            document.getElementById('editDescripcion').value = data.descripcion || '';
+            document.getElementById('detailCreatedAt').textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'N/A';
+            
+            // URLs de archivos (solo visualización)
             document.getElementById('detailLogo').innerHTML = data.logoURL ? `<p class="text-xs text-gray-500 truncate">Logo URL: <a href="${data.logoURL}" target="_blank" class="text-blue-500 hover:underline">${data.logoURL.substring(0, 30)}...</a></p>` : 'Sin Logo Subido';
-            
             const prod1 = data.productos?.[0];
             const prod2 = data.productos?.[1];
-
             document.getElementById('detailProd1').innerHTML = `
                 <p><strong>Desc:</strong> ${prod1?.descripcion || 'N/A'}</p>
                 <p class="text-xs text-gray-500 truncate">URL: ${prod1?.url ? `<a href="${prod1.url}" target="_blank" class="text-blue-500 hover:underline">${prod1.url.substring(0, 30)}...</a>` : 'N/A'}</p>
@@ -224,12 +301,9 @@
                 <p><strong>Desc:</strong> ${prod2?.descripcion || 'N/A'}</p>
                 <p class="text-xs text-gray-500 truncate">URL: ${prod2?.url ? `<a href="${prod2.url}" target="_blank" class="text-blue-500 hover:underline">${prod2.url.substring(0, 30)}...</a>` : 'N/A'}</p>
             `;
-
             detailPanel.classList.remove('hidden');
-            
             updateNavigationButtons();
         }
-
         /**
          * Actualiza los botones de navegación secuencial.
          */
@@ -237,43 +311,31 @@
             navPrevBtn.disabled = currentRecordIndex <= 0;
             navNextBtn.disabled = currentRecordIndex >= allRecords.length - 1;
         }
-
-        /**
-         * Navega al registro anterior/siguiente en el conjunto de registros cargados.
-         * @param {number} offset - -1 para anterior, 1 para siguiente.
-         */
         window.navigateRecord = async function (offset) {
-            const newIndex = currentRecordIndex + offset;
-            
+            if (editButtons.classList.contains('hidden') === false) {
+                alert("Por favor, guarde o cancele la edición actual antes de navegar.");
+                return;
+            }
+            const newIndex = currentRecordIndex + offset; 
             if (newIndex >= 0 && newIndex < allRecords.length) {
                 const docId = allRecords[newIndex];
-                
-                // Cargar el detalle del documento
                 const docSnap = await getDoc(doc(perfilesRef, docId));
                 if (docSnap.exists()) {
                     selectRecord(docId, docSnap.data());
+                    toggleEditMode(false); 
                 } else {
                     alert('Error: El registro no existe.');
-                    loadRecords('initial'); // Recargar la lista
+                    loadRecords('initial'); 
                 }
             }
         }
-        
-        /**
-         * Elimina un registro de la base de datos (Admin CRUD).
-         * @param {string} docId - ID del documento.
-         * @param {string} codigoSecuencial - Código amigable para confirmación.
-         */
-        async function borrarRegistro(docId, codigoSecuencial) {
-            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE el registro ${codigoSecuencial}? Esta acción es irreversible.`)) {
+        async function borrarRegistro(docId) { 
+            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE el registro? Esta acción es irreversible.`)) {
                 return;
             }
-
             try {
                 await deleteDoc(doc(perfilesRef, docId));
-                alert(`✅ El registro ${codigoSecuencial} ha sido borrado exitosamente.`);
-                
-                // Recargar la lista y ocultar el panel de detalle
+                alert(`✅ El registro ha sido borrado exitosamente.`); // Mensaje simplificado
                 loadRecords('initial');
                 detailPanel.classList.add('hidden');
             } catch (error) {
@@ -281,44 +343,50 @@
                 alert(`❌ Ocurrió un error al intentar borrar el registro: ${error.message}`);
             }
         }
-
         // ======================== INICIALIZACIÓN ========================
-
         window.onload = function() {
-            // Carga inicial de la primera página
             loadRecords('initial'); 
             
             // Configurar botones de paginación
             prevPageBtn.onclick = () => loadRecords('prev');
             nextPageBtn.onclick = () => loadRecords('next');
-            
             // Configurar botones de navegación secuencial
             navPrevBtn.onclick = () => navigateRecord(-1);
             navNextBtn.onclick = () => navigateRecord(1);
-            
             // Configurar búsqueda
             document.getElementById('searchButton').onclick = searchRecords;
+            // Permitir búsqueda al presionar ENTER en el input
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchRecords();
+                }
+            });
+            // Configurar botones de edición y cancelación
+            saveButton.onclick = guardarModificacion;
+            cancelButton.onclick = () => {
+                selectRecord(selectedDocId, currentRecordData); 
+                toggleEditMode(false); 
+            };
         };
     </script>
-
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
         .header {
-            background-color: #4a148c; /* Violeta oscuro */
+            background-color: #4a148c; 
             color: white;
         }
         .main-container {
-            min-height: calc(100vh - 80px); /* Ajuste basado en el header */
+            min-height: calc(100vh - 80px); 
         }
         th, td {
             padding: 12px 16px;
             text-align: left;
         }
         th {
-            background-color: #fef08a; /* Amarillo claro (simulando Tailwind amber-100) */
+            background-color: #fef08a; 
             color: #4a148c;
             border-bottom: 2px solid #ddd;
         }
@@ -334,6 +402,14 @@
             border-bottom: 1px solid #eee;
             padding: 10px 0;
         }
+        .edit-input {
+            margin-top: 5px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body class="p-0">
@@ -341,45 +417,38 @@
         <h1 class="text-3xl font-extrabold">🚀 Panel de Gestión (Administración)</h1>
         <p class="text-sm">Vista de tabla y detalles de Perfiles Digitales.</p>
     </header>
-
     <div class="main-container flex flex-col lg:flex-row p-6 gap-6">
-
-        <!-- Columna Principal: Búsqueda y Tabla -->
         <div class="lg:w-2/3 w-full bg-white p-6 rounded-lg shadow-xl">
             <h2 class="text-xl font-bold text-gray-700 mb-4">Catálogo de Perfiles</h2>
-
-            <!-- Búsqueda -->
-            <div class="flex flex-col sm:flex-row gap-3 mb-6">
-                <select id="searchType" class="p-3 border rounded-lg focus:ring-violet-500 focus:border-violet-500">
-                    <option value="codigoSecuencial">Código Amigable</option>
-                    <option value="nombreEmprendimiento">Emprendimiento</option>
-                </select>
-                <input type="text" id="searchInput" placeholder="Buscar..." class="p-3 border rounded-lg flex-grow" />
-                <button id="searchButton" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                    🔍 Buscar
-                </button>
+            
+            <div class="mb-6 border p-4 rounded-lg bg-gray-50">
+                <label for="searchInput" class="font-semibold text-gray-700 mb-2 block">Buscar Perfil (Nombre, Emprendimiento o Teléfono)</label>
+                <div class="flex gap-3 items-stretch">
+                    <input type="text" id="searchInput" placeholder="Ej: Ana, Artesanías, 6543-2109" class="p-3 border rounded-lg flex-grow" />
+                    <button id="searchButton" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
+                        🔍 Buscar
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">*Búsqueda flexible por nombre de la emprendedora, nombre del emprendimiento o teléfono.</p>
             </div>
-
-            <!-- Tabla de Registros -->
+            
             <div class="table-container">
                 <table class="w-full border-collapse rounded-lg overflow-hidden">
                     <thead>
                         <tr>
-                            <th>Código</th>
                             <th>Emprendimiento</th>
-                            <th>Emprendedora</th>
+                            <th>Artesana</th> 
                             <th>Teléfono</th>
                             <th>Ubicación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="6" class="text-center py-4 text-gray-500">Cargando datos...</td></tr>
+                        <tr><td colspan="5" class="text-center py-4 text-gray-500">Cargando datos...</td></tr>
                     </tbody>
                 </table>
             </div>
-
-            <!-- Paginación -->
+            
             <div class="flex justify-between items-center mt-6">
                 <button id="prevPage" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l-lg" disabled>
                     Página Anterior
@@ -394,49 +463,62 @@
                 Cargando...
             </div>
         </div>
-
-        <!-- Columna de Detalle (Panel Derecho) -->
+        
         <div id="detailPanel" class="lg:w-1/3 w-full detail-card p-6 rounded-lg shadow-xl hidden">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <h2 class="text-xl font-bold text-violet-800">Detalle del Perfil</h2>
-                <span id="detailCodigo" class="bg-yellow-300 text-yellow-900 font-extrabold px-3 py-1 rounded-full text-sm"></span>
-            </div>
-
-            <!-- Navegación Secuencial -->
+                </div>
+            
             <div class="flex justify-between items-center mb-6">
                 <button id="navPrev" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-3 rounded transition-colors text-sm" disabled>
                     &larr; Anterior
                 </button>
-                <span class="text-sm font-medium text-gray-600">Navegación</span>
+                
+                <div id="viewButtonsContainer">
+                </div>
+                <div id="editButtons" class="flex gap-2 hidden">
+                    <button id="saveButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded transition-colors text-sm">
+                        💾 Guardar Cambios
+                    </button>
+                    <button id="cancelButton" class="bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 rounded transition-colors text-sm">
+                        ❌ Cancelar
+                    </button>
+                </div>
                 <button id="navNext" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-3 rounded transition-colors text-sm" disabled>
                     Siguiente &rarr;
                 </button>
             </div>
-
+            
             <div class="space-y-3">
                 <div class="detail-item">
                     <p class="font-semibold text-gray-700">Emprendimiento:</p>
-                    <p id="detailEmprendimiento" class="text-gray-900"></p>
+                    <p id="displayEmprendimiento" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editEmprendimiento" class="edit-input hidden" placeholder="Nombre del Emprendimiento" />
                 </div>
                 <div class="detail-item">
-                    <p class="font-semibold text-gray-700">Emprendedora:</p>
-                    <p id="detailEmprendedora" class="text-gray-900"></p>
+                    <p class="font-semibold text-gray-700">Artesana:</p> 
+                    <p id="displayArtesana" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editArtesana" class="edit-input hidden" placeholder="Nombre de la Artesana" /> 
                 </div>
                 <div class="detail-item">
                     <p class="font-semibold text-gray-700">Teléfono:</p>
-                    <p id="detailTelefono" class="text-gray-900"></p>
+                    <p id="displayTelefono" class="text-gray-900 view-display"></p>
+                    <input type="tel" id="editTelefono" class="edit-input hidden" placeholder="9999-9999" />
                 </div>
                 <div class="detail-item">
                     <p class="font-semibold text-gray-700">Ubicación:</p>
-                    <p id="detailUbicacion" class="text-gray-900"></p>
+                    <p id="displayUbicacion" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editUbicacion" class="edit-input hidden" placeholder="Provincia, Ciudad" />
                 </div>
                 <div class="detail-item">
                     <p class="font-semibold text-gray-700">Instagram:</p>
-                    <p id="detailInstagram" class="text-gray-900"></p>
+                    <p id="displayInstagram" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editInstagram" class="edit-input hidden" placeholder="@usuario" />
                 </div>
                 <div class="detail-item">
                     <p class="font-semibold text-gray-700">Descripción:</p>
-                    <p id="detailDescripcion" class="text-gray-900 text-sm italic"></p>
+                    <p id="displayDescripcion" class="text-gray-900 text-sm italic view-display"></p>
+                    <textarea id="editDescripcion" class="edit-input hidden" rows="3" placeholder="Descripción breve del emprendimiento"></textarea>
                 </div>
                 <div class="detail-item">
                     <p class="font-semibold text-gray-700">Creado:</p>
@@ -444,8 +526,8 @@
                 </div>
                 
                 <h3 class="text-md font-bold text-gray-700 pt-3">Archivos Subidos (URLs)</h3>
+                <p class="text-xs text-red-500 font-semibold">La modificación de imágenes solo es posible en el formulario principal (index.html).</p>
                 <div class="detail-item" id="detailLogo">
-                    <!-- Logo URL -->
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="detail-item border-none" id="detailProd1">
@@ -455,7 +537,6 @@
                         <p class="font-semibold text-gray-700">Producto 2:</p>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
