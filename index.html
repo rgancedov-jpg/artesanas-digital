@@ -26,7 +26,7 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
     Consolidación del Código: Todo el proyecto (HTML, CSS y la lógica de Firebase) está ahora contenido en un solo archivo para una gestión más sencilla.
     Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta dentro del documento PDF, optimizando la visibilidad.
     Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Firebase.
-  -->  
+  -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -46,6 +46,10 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
             font-size: 2.2rem;
             margin-bottom: 0.5rem;
             text-align: center;
+        }
+        h3 {
+             color: #6a1b9a; /* Violeta medio */
+             margin-top: 20px;
         }
         .subtitulo {
             color: #6a1b9a; /* Violeta medio */
@@ -78,7 +82,7 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
             display: block;
             color: #333;
         }
-        input[type="text"], input[type="file"], input[type="email"], textarea {
+        input[type="text"], input[type="file"], input[type="email"], input[type="tel"], textarea {
             display: block;
             width: 100%;
             padding: 12px;
@@ -226,11 +230,11 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
 
         // =================================================================================
-        // ATENCIÓN: REEMPLAZA LOS VALORES CON TU CONFIGURACIÓN REAL DE FIREBASE
+        // CONFIGURACIÓN DE FIREBASE (Tomada del archivo subido)
         // =================================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
@@ -242,76 +246,14 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
             measurementId: "G-SQPMWH7G50" 
         };
         // =================================================================================
-        // =================================================================================
 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app);
+        const storage = getStorage(app); 
 
         // ======================== FUNCIONES AUXILIARES ========================
         
-        /**
-         * Genera un código único y amigable (Ej: ARO-5219)
-         * - Prefijo: Primeras 3 letras de iniciales del nombre completo.
-         * - Sufijo: Últimos 4 dígitos del teléfono.
-         */
-        function generarCodigoAmigableCompleto(nombreCompleto, telefono) {
-            if (!nombreCompleto || !telefono) return "";
-
-            const partes = nombreCompleto.trim().toUpperCase().split(/\s+/);
-            let prefijo = "";
-
-            // Lógica para obtener hasta 3 letras (iniciales)
-            for (let i = 0; i < partes.length && prefijo.length < 3; i++) {
-                if (partes[i].length > 0) {
-                    // Si es la primera parte (nombre), toma la primera letra
-                    if (i === 0) {
-                        prefijo += partes[i][0];
-                    } 
-                    // Si son partes siguientes (apellidos), intenta tomar dos letras para un prefijo más distintivo
-                    else if (prefijo.length === 1 && partes[i].length >= 2) {
-                        prefijo += partes[i].substring(0, 2);
-                    } 
-                    // Si ya tiene más de una letra o la palabra es muy corta, toma solo la inicial
-                    else if (prefijo.length < 3) {
-                        prefijo += partes[i][0];
-                    }
-                }
-            }
-            
-            // Asegura que el prefijo tenga 3 letras o el máximo posible
-            prefijo = prefijo.substring(0, 3).padEnd(3, 'X'); 
-
-            // Sufijo: Últimos 4 dígitos del teléfono
-            const soloNumeros = telefono.replace(/[^0-9]/g, ''); 
-            const sufijo = soloNumeros.slice(-4).padStart(4, '0'); 
-
-            return `${prefijo.toUpperCase()}-${sufijo}`; 
-        }
-
-        async function subirImagenYObtenerURL(file, carpeta) {
-            if (!file) return null;
-            const safeName = file.name.replace(/\s+/g, "_");
-            const nombre = `${Date.now()}_${safeName}`;
-            const ruta = `${carpeta}/${nombre}`;
-            const storageRef = ref(storage, ruta);
-            await uploadBytes(storageRef, file);
-            return await getDownloadURL(storageRef);
-        }
-
-        async function borrarImagenDeStorage(url) {
-            if (!url || typeof url !== 'string' || !url.includes('firebasestorage')) return;
-            try {
-                const storageRef = ref(storage, url);
-                await deleteObject(storageRef);
-            } catch (error) {
-                if (error.code !== 'storage/object-not-found') {
-                    console.warn(`Error al borrar la imagen en la URL ${url}:`, error);
-                }
-            }
-        }
-
         function llenarFormulario(data, docId) {
             document.getElementById("docId").value = docId || ""; 
             document.getElementById("nombre").value = data.nombre || "";
@@ -320,12 +262,12 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
             document.getElementById("nombreEmprendimiento").value = data.nombreEmprendimiento || "";
             document.getElementById("descripcion").value = data.descripcion || "";
             document.getElementById("instagram").value = data.instagram || "";
-            document.getElementById("codigoSecuencial").value = data.codigoSecuencial || ""; 
             
             document.getElementById("descProducto1").value = data.productos?.[0]?.descripcion || "";
             document.getElementById("descProducto2").value = data.productos?.[1]?.descripcion || "";
 
-            alert(`✅ Perfil de ${data.nombreEmprendimiento} cargado para edición.`);
+            // Ya no se muestra el alert de perfil cargado para seguir el comportamiento de administracion.html
+            // document.getElementById("codigoSecuencialOculto").value = data.codigoSecuencial || ""; 
         }
         
         // ======================== FUNCIONES PRINCIPALES DE FIREBASE (CRUD) ========================
@@ -348,18 +290,11 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
                 return;
             }
 
-            // Generar el código amigable antes de guardar
-            const codigoSecuencial = generarCodigoAmigableCompleto(nombre, telefono); 
-            document.getElementById("codigoSecuencial").value = codigoSecuencial; // Se establece el código aquí
-
             const ubicacion = document.getElementById("ubicacion").value.trim();
             const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
             const descripcion = document.getElementById("descripcion").value.trim();
             const instagram = document.getElementById("instagram").value.trim();
-            const logoFile = document.getElementById("logo").files[0];
-            const producto1File = document.getElementById("producto1").files[0];
-            const producto2File = document.getElementById("producto2").files[0];
-
+            
             const btnGuardar = document.getElementById("btnGuardarBD");
             const originalText = btnGuardar ? btnGuardar.textContent : null;
             if (btnGuardar) {
@@ -367,38 +302,50 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
                 btnGuardar.textContent = docId ? "Actualizando..." : "Guardando...";
             }
 
-            try {
-                // Subir imágenes en paralelo
-                const [logoURL, producto1URL, producto2URL] = await Promise.all([
-                    subirImagenYObtenerURL(logoFile, "logos"),
-                    subirImagenYObtenerURL(producto1File, "productos"),
-                    subirImagenYObtenerURL(producto2File, "productos")
-                ]);
+            // --- Lógica de imágenes (Deshabilitada) ---
+            const logoFile = document.getElementById("logo").files[0];
+            const producto1File = document.getElementById("producto1").files[0];
+            const producto2File = document.getElementById("producto2").files[0];
 
+            let logoURL = null;
+            let producto1URL = null;
+            let producto2URL = null;
+
+            if (logoFile || producto1File || producto2File) {
+                alert("⚠️ Subida de imágenes OMITIDA. Esta funcionalidad está desactivada temporalmente. Solo se guardará la data de texto.");
+            }
+            // --- Fin Lógica de imágenes ---
+
+            try {
                 const docData = {
                     nombre, telefono, ubicacion, nombreEmprendimiento, descripcion, instagram,
-                    codigoSecuencial,
-                    logoURL: logoURL || null,
+                    logoURL: logoURL, 
                     productos: [
-                        { url: producto1URL || null, descripcion: document.getElementById("descProducto1").value.trim() || null },
-                        { url: producto2URL || null, descripcion: document.getElementById("descProducto2").value.trim() || null }
+                        { url: producto1URL, descripcion: document.getElementById("descProducto1").value.trim() || null },
+                        { url: producto2URL, descripcion: document.getElementById("descProducto2").value.trim() || null }
                     ],
+                    // Campos adicionales para facilitar la búsqueda por texto (minúsculas)
+                    nombre_lower: nombre.toLowerCase(),
+                    nombreEmprendimiento_lower: nombreEmprendimiento.toLowerCase(),
                     updatedAt: new Date().toISOString()
                 };
                 
+                let docRef;
                 if (docId) {
-                    await updateDoc(doc(db, "perfiles", docId), docData);
-                    alert("✅ Registro actualizado correctamente (Código: " + codigoSecuencial + ")");
+                    docRef = doc(db, "perfiles", docId);
+                    await updateDoc(docRef, docData);
+                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
+                    alert("✅ Registro actualizado (TEXTO SOLAMENTE) correctamente.");
                 } else {
-                    const docRef = await addDoc(collection(db, "perfiles"), {
+                    docRef = await addDoc(collection(db, "perfiles"), {
                         ...docData,
                         createdAt: new Date().toISOString()
                     });
                     document.getElementById("docId").value = docRef.id; 
-                    alert("✅ Datos guardados correctamente (Código: " + codigoSecuencial + ")");
+                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
+                    alert("✅ Datos guardados (TEXTO SOLAMENTE) correctamente.");
                 }
 
-                // Generar el QR inmediatamente después de guardar/actualizar
                 generarQR();
 
             } catch (err) {
@@ -412,30 +359,54 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
             }
         };
 
-        window.buscarPorCodigoSecuencial = async function () {
-            const codigo = document.getElementById("codigoSecuencial").value.trim().toUpperCase();
+        // ** FUNCIÓN DE BÚSQUEDA **
+        window.buscarPorTexto = async function () {
+            const textoBusqueda = document.getElementById("busquedaTexto").value.trim();
             
-            if (!codigo) {
-                alert("Por favor, ingrese el Código de Emprendimiento (Ej: ARO-5219) para buscar.");
+            if (!textoBusqueda) {
+                alert("Por favor, ingrese el Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono para buscar.");
                 return;
             }
             
-            const btnBuscar = document.querySelector('button[onclick="buscarPorCodigoSecuencial()"]');
+            const btnBuscar = document.querySelector('button[onclick="buscarPorTexto()"]');
             const originalText = btnBuscar.textContent;
             btnBuscar.disabled = true;
             btnBuscar.textContent = "Buscando...";
 
             try {
-                const q = query(collection(db, "perfiles"), where("codigoSecuencial", "==", codigo));
-                const querySnapshot = await getDocs(q);
+                const profilesRef = collection(db, "perfiles");
+                const lowerCaseSearch = textoBusqueda.toLowerCase();
+                let querySnapshot;
 
-                if (querySnapshot.empty) {
-                    alert(`❌ No se encontró ningún perfil con el código: ${codigo}.`);
+                querySnapshot = await getDocs(profilesRef);
+
+                let docSnap = null;
+                const docs = querySnapshot.docs;
+
+                // Búsqueda en el cliente: Nombre (parcial e insensitive) O Emprendimiento (parcial e insensitive) O Teléfono (exacto)
+                for (const doc of docs) {
+                    const data = doc.data();
+                    const nombre = data.nombre?.toLowerCase() || '';
+                    const emprendimiento = data.nombreEmprendimiento?.toLowerCase() || '';
+                    const telefono = data.telefono || '';
+
+                    const match = nombre.includes(lowerCaseSearch) || 
+                                  emprendimiento.includes(lowerCaseSearch) ||
+                                  telefono === textoBusqueda; 
+
+                    if (match) {
+                        docSnap = doc;
+                        break;
+                    }
+                }
+
+
+                if (!docSnap) {
+                    alert(`❌ No se encontró ningún perfil que coincida con: ${textoBusqueda}. Puede crear uno nuevo.`);
                     document.getElementById("docId").value = ""; 
                     document.getElementById("dataForm").reset(); 
-                    document.getElementById("codigoSecuencial").value = codigo;
+                    document.getElementById("busquedaTexto").value = textoBusqueda;
                 } else {
-                    const docSnap = querySnapshot.docs[0];
                     llenarFormulario(docSnap.data(), docSnap.id); 
                 }
 
@@ -450,14 +421,14 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
 
         window.borrarArtesana = async function () {
             const docId = document.getElementById("docId").value.trim();
-            const codigo = document.getElementById("codigoSecuencial").value.trim();
 
             if (!docId) {
                 alert("❌ Error: No se ha cargado ningún perfil para borrar. Use el botón 'Buscar' primero.");
                 return;
             }
 
-            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE el registro con código ${codigo}? Esta acción es irreversible y eliminará también las imágenes asociadas.`)) {
+            // MENSAJE DE CONFIRMACIÓN SIMPLE (SIN ID)
+            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE este registro? Esta acción es irreversible.`)) {
                 return;
             }
 
@@ -471,21 +442,12 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const deletePromises = [];
-                    deletePromises.push(borrarImagenDeStorage(data.logoURL));
-                    if (data.productos) {
-                        data.productos.forEach(p => {
-                            deletePromises.push(borrarImagenDeStorage(p.url));
-                        });
-                    }
-                    await Promise.all(deletePromises); // Elimina imágenes del Storage
-                    await deleteDoc(docRef); // Elimina el registro de Firestore
+                    await deleteDoc(docRef); 
 
                     document.getElementById("dataForm").reset();
                     document.getElementById("docId").value = "";
-                    document.getElementById("codigoSecuencial").value = "";
-                    alert(`✅ El registro con código ${codigo} ha sido borrado exitosamente.`);
+                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
+                    alert(`✅ El registro ha sido borrado exitosamente.`);
                 } else {
                     alert("❌ Error: El documento no existe en Firestore, pero el formulario se ha limpiado.");
                     document.getElementById("dataForm").reset();
@@ -500,6 +462,17 @@ La aplicación ahora crea un identificador único y fácil de recordar para cada
                 btnBorrar.textContent = originalText;
             }
         };
+        
+        window.limpiarFormularioParaNuevoRegistro = function() {
+            document.getElementById("dataForm").reset(); 
+            document.getElementById("docId").value = ""; 
+            document.getElementById("busquedaTexto").value = ""; 
+            document.getElementById("logoPreview").innerHTML = ""; 
+            document.getElementById("productPreviews").innerHTML = ""; 
+            document.getElementById("qrCanvas").style.display = 'none'; 
+            document.getElementById("qrMensaje").textContent = ""; 
+            alert("✅ Formulario listo para un Nuevo Registro.");
+        }
 
         // ======================== LÓGICA DE QR Y PDF ========================
         const { jsPDF } = window.jspdf;
@@ -561,10 +534,9 @@ Link: ${instagramUrl}
             
             const qrCanvas = document.getElementById("qrCanvas");
             const qrMensaje = document.getElementById("qrMensaje");
-
             const datosQR = generarDatosQR();
+
             try {
-                // 1. Generar QR para el PDF (necesario para la imagen)
                 await new Promise((resolve, reject) => {
                     QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
                         if (error) reject("Error al generar el QR para el PDF.");
@@ -585,6 +557,8 @@ Link: ${instagramUrl}
             const descripcion = document.getElementById("descripcion").value.trim();
             const instagramUser = document.getElementById("instagram").value.trim();
             const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            
+            // Inputs de archivos que ahora SÍ contienen el archivo para el PDF local
             const logoInput = document.getElementById("logo");
             const producto1Input = document.getElementById("producto1");
             const producto2Input = document.getElementById("producto2");
@@ -683,7 +657,7 @@ Link: ${instagramUrl}
                 doc.text(`Link: `, 20, yOffset);
                 doc.setFont('helvetica', 'normal');
                 doc.textWithLink(instagramUrl, 20, yOffset + 5, { url: instagramUrl });
-                yOffset += 20;
+                yOffset += 15;
             }
 
             async function addProducts() {
@@ -694,7 +668,7 @@ Link: ${instagramUrl}
                 const boxX = 18;
                 const boxY = yOffset + 3;
                 const boxWidth = 120;
-                const boxHeight = 60;
+                const boxHeight = 58;
                 
                 doc.rect(boxX, boxY, boxWidth, boxHeight); 
                 yOffset += 10;
@@ -745,7 +719,6 @@ Link: ${instagramUrl}
 
         function displayPreview(file, description, containerId) {
             const container = document.getElementById(containerId);
-            container.innerHTML = "";
             const reader = new FileReader();
             reader.onload = function(e) {
                 const item = document.createElement("div");
@@ -758,14 +731,15 @@ Link: ${instagramUrl}
                 desc.className = "description";
                 desc.textContent = description;
                 item.appendChild(desc);
-                container.appendChild(item);
+                
+                document.getElementById(containerId).appendChild(item);
             };
             reader.readAsDataURL(file);
         }
 
         function updateProductPreviews() {
             const container = document.getElementById("productPreviews");
-            container.innerHTML = "";
+            container.innerHTML = ""; 
             const producto1Input = document.getElementById("producto1");
             const producto2Input = document.getElementById("producto2");
             const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
@@ -781,7 +755,7 @@ Link: ${instagramUrl}
         
         document.getElementById("logo").addEventListener("change", function() {
             const container = document.getElementById("logoPreview");
-            container.innerHTML = "";
+            container.innerHTML = ""; 
             if (this.files && this.files[0]) {
                 displayPreview(this.files[0], "Logo del emprendimiento", "logoPreview");
             }
@@ -819,12 +793,12 @@ Link: ${instagramUrl}
 
             <input type="hidden" id="docId" value="" />
 
-            <label for="codigoSecuencial">Código de Emprendimiento (Búsqueda)</label>
+            <label for="busquedaTexto">Buscar Perfil (Nombre, Emprendimiento o Teléfono)</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="codigoSecuencial" placeholder="Ej: ARO-5219 (Iniciales-Teléfono)" style="flex-grow: 1;" />
-                <button type="button" class="btn" onclick="buscarPorCodigoSecuencial()" style="min-width: 100px;">Buscar 🔍</button>
+                <input type="text" id="busquedaTexto" placeholder="Ej: Ana, Artesanías, 6543-2109" style="flex-grow: 1;" />
+                <button type="button" class="btn" onclick="buscarPorTexto()" style="min-width: 100px;">Buscar 🔍</button>
             </div>
-            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*El código se **genera automáticamente** al guardar/actualizar.</p>
+            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*Busque por nombre de la emprendedora, nombre del emprendimiento o teléfono.</p>
             
 
             <label for="nombre">Nombre de la Emprendedora</label>
@@ -872,6 +846,7 @@ Link: ${instagramUrl}
         </div>
         
         <div class="btn-container">
+            <button type="button" class="btn" onclick="limpiarFormularioParaNuevoRegistro()">Nuevo Perfil</button>
             <button type="button" class="btn" onclick="generarQR()">Generar QR</button>
             <button type="button" class="btn" onclick="generarPDF()">Descargar PDF</button>
             <button type="button" id="btnBorrarBD" class="btn-delete" onclick="borrarArtesana()">Borrar Registro</button>
