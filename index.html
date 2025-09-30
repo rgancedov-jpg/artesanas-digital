@@ -5,28 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Perfil Digital - Ministerio de la Mujer</title>
 <!-- 
-  🚀 Resumen de las Nuevas Funcionalidades
+🚀 Resumen de las Nuevas Funcionalidades
 Esta versión consolida el formulario como una herramienta completa de gestión y difusión de perfiles (CRUD), integrando la base de datos (Firebase) y las utilidades de exportación.
 1. Funcionalidad de los Botones (CRUD y Utilidades)
 Los botones permiten ejecutar las funciones principales de la aplicación:
 Botón	Acción Principal	Detalle y Objetivo
-Buscar 🔍	Lectura (Read)	Permite cargar el perfil en el formulario usando el Código de Emprendimiento para visualizar o editar.
+Buscar 🔍	Lectura (Read)	Permite cargar el perfil mediante **búsqueda total o parcial** por Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono, facilitando la visualización o edición.
 Guardar en BD	Creación/Actualización (Create/Update)	Es el botón clave. Persiste los datos en Firestore y las imágenes en Storage. Además, activa la generación automática del Código Amigable si el perfil es nuevo.
 Borrar Registro	Eliminación (Delete)	Borra permanentemente el registro de la base de datos y elimina todas las imágenes (logo y productos) asociadas de Firebase Storage.
 Generar QR	Herramienta	Muestra en pantalla el Código QR interactivo, con opciones para incluir solo el link de Instagram o todos los datos del perfil.
 Descargar PDF	Herramienta	Genera un PDF listo para imprimir que incluye todos los datos del perfil, las imágenes y el Código QR.
-2. Característica Clave: Generación de Código Amigable
-La aplicación ahora crea un identificador único y fácil de recordar para cada emprendedora:
-    Formato: XXX-0000 (Ejemplo: ARO-5219).
-    Mecanismo: El código se genera automáticamente al presionar "Guardar en BD".
-        Prefijo (XXX): Utiliza las iniciales del nombre completo de la emprendedora.
-        Sufijo (0000): Utiliza los últimos cuatro dígitos del número de teléfono proporcionado.
-    Propósito: Sustituir los IDs complejos de la base de datos con un código simple para búsquedas y referencias.
-3. Otras Mejoras de la Versión
-    Consolidación del Código: Todo el proyecto (HTML, CSS y la lógica de Firebase) está ahora contenido en un solo archivo para una gestión más sencilla.
-    Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta dentro del documento PDF, optimizando la visibilidad.
-    Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Firebase.
-  -->
+Limpiar Filtro 🔄	Herramienta	Restablece el formulario a un estado vacío para un nuevo registro o limpia completamente los resultados de búsqueda, **ejecutándose instantáneamente sin mensajes de confirmación**.
+2. Otras Mejoras de la Versión
+Implementación de un algoritmo de **búsqueda flexible (total y parcial)** que ignora mayúsculas/minúsculas y acentos, y realiza coincidencia de subcadenas en los campos clave (Nombre, Emprendimiento, Teléfono).
+Reorganización del formulario para seguir el orden de captura solicitado (Artesana, Emprendimiento, Teléfono, Ubicación, Logo, Descripción, Instagram).
+Consolidación del Código: Todo el proyecto (HTML, CSS y la lógica de Firebase) está ahora contenido en un solo archivo para una gestión más sencilla.
+Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta dentro del documento PDF, optimizando la visibilidad.
+Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Firebase.
+-->
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
