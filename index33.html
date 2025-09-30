@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perfil Digital - Ministerio de la Mujer</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f9f9f9;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 {
+            color: #4a148c; /* Violeta oscuro */
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        h3 {
+             color: #6a1b9a; /* Violeta medio */
+             margin-top: 20px;
+        }
+        .subtitulo {
+            color: #6a1b9a; /* Violeta medio */
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        #headerLogoDisplay {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #headerLogoDisplay img {
+            max-width: 150px;
+            height: auto;
+        }
+        form {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 15px;
+            display: block;
+            color: #333;
+        }
+        input[type="text"], input[type="file"], input[type="email"], input[type="tel"], textarea {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: #6a1b9a; /* Violeta principal */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+        .btn:hover {
+            background-color: #4a148c; /* Violeta oscuro hover */
+        }
+        .btn-save {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: #28a745; /* Verde para guardar */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+        .btn-save:hover { background-color: #198c3a; }
+        
+        .btn-delete {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background-color: #dc3545; /* Rojo para borrar */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+        .btn-delete:hover { background-color: #c82333; }
+
+        .opciones {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .opciones b {
+            font-size: 1.1rem;
+            color: #4a148c;
+        }
+        .opciones label {
+            font-weight: normal;
+            margin-top: 5px;
+            color: #333;
+            display: block;
+        }
+        .opciones input[type="radio"] {
+            margin-right: 8px;
+        }
+        #qrDisplay {
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        #qrCanvas {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+        }
+        #qrMensaje {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .product-gallery {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .preview-item {
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .preview-item img {
+            max-width: 100px;
+            max-height: 100px;
+            margin-bottom: 5px;
+        }
+        .preview-item .description {
+            font-size: 0.8rem;
+            color: #555;
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
+        }
+    </style>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
+
+        // =================================================================================
+        // CONFIGURACIÓN DE FIREBASE (Tomada del archivo subido)
+        // =================================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
+            authDomain: "artesanas-panama-digital.firebaseapp.com", 
+            projectId: "artesanas-panama-digital", 
+            storageBucket: "artesanas-panama-digital.firebasestorage.app", 
+            messagingSenderId: "216158084302", 
+            appId: "1:216158084302:web:e3c38b4a1a7234c7a8449f", 
+            measurementId: "G-SQPMWH7G50" 
+        };
+        // =================================================================================
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app); 
+
+        // ======================== FUNCIONES AUXILIARES ========================
+        
+        function llenarFormulario(data, docId) {
+            document.getElementById("docId").value = docId || ""; 
+            document.getElementById("nombre").value = data.nombre || "";
+            document.getElementById("telefono").value = data.telefono || "";
+            document.getElementById("ubicacion").value = data.ubicacion || "";
+            document.getElementById("nombreEmprendimiento").value = data.nombreEmprendimiento || "";
+            document.getElementById("descripcion").value = data.descripcion || "";
+            document.getElementById("instagram").value = data.instagram || "";
+            
+            document.getElementById("descProducto1").value = data.productos?.[0]?.descripcion || "";
+            document.getElementById("descProducto2").value = data.productos?.[1]?.descripcion || "";
+
+            // Ya no se muestra el alert de perfil cargado para seguir el comportamiento de administracion.html
+            // document.getElementById("codigoSecuencialOculto").value = data.codigoSecuencial || ""; 
+        }
+        
+        // ======================== FUNCIONES PRINCIPALES DE FIREBASE (CRUD) ========================
+
+        // ** FUNCIÓN CLAVE **: GUARDA O ACTUALIZA EN LA BASE DE DATOS
+        window.guardarEnBD = async function () {
+            const form = document.getElementById("dataForm");
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                alert("Por favor, rellene los campos obligatorios antes de guardar.");
+                return;
+            }
+
+            const docId = document.getElementById("docId").value.trim(); 
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+                
+            if (!nombre || !telefono) {
+                alert("ERROR: Debe ingresar el Nombre y Teléfono.");
+                return;
+            }
+
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagram = document.getElementById("instagram").value.trim();
+            
+            const btnGuardar = document.getElementById("btnGuardarBD");
+            const originalText = btnGuardar ? btnGuardar.textContent : null;
+            if (btnGuardar) {
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = docId ? "Actualizando..." : "Guardando...";
+            }
+
+            // --- Lógica de imágenes (Deshabilitada) ---
+            const logoFile = document.getElementById("logo").files[0];
+            const producto1File = document.getElementById("producto1").files[0];
+            const producto2File = document.getElementById("producto2").files[0];
+
+            let logoURL = null;
+            let producto1URL = null;
+            let producto2URL = null;
+
+            if (logoFile || producto1File || producto2File) {
+                alert("⚠️ Subida de imágenes OMITIDA. Esta funcionalidad está desactivada temporalmente. Solo se guardará la data de texto.");
+            }
+            // --- Fin Lógica de imágenes ---
+
+            try {
+                const docData = {
+                    nombre, telefono, ubicacion, nombreEmprendimiento, descripcion, instagram,
+                    logoURL: logoURL, 
+                    productos: [
+                        { url: producto1URL, descripcion: document.getElementById("descProducto1").value.trim() || null },
+                        { url: producto2URL, descripcion: document.getElementById("descProducto2").value.trim() || null }
+                    ],
+                    // Campos adicionales para facilitar la búsqueda por texto (minúsculas)
+                    nombre_lower: nombre.toLowerCase(),
+                    nombreEmprendimiento_lower: nombreEmprendimiento.toLowerCase(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                let docRef;
+                if (docId) {
+                    docRef = doc(db, "perfiles", docId);
+                    await updateDoc(docRef, docData);
+                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
+                    alert("✅ Registro actualizado (TEXTO SOLAMENTE) correctamente.");
+                } else {
+                    docRef = await addDoc(collection(db, "perfiles"), {
+                        ...docData,
+                        createdAt: new Date().toISOString()
+                    });
+                    document.getElementById("docId").value = docRef.id; 
+                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
+                    alert("✅ Datos guardados (TEXTO SOLAMENTE) correctamente.");
+                }
+
+                generarQR();
+
+            } catch (err) {
+                console.error("Error guardando en Firebase:", err);
+                alert("❌ Ocurrió un error al guardar en Firebase. Revisa la consola (F12).");
+            } finally {
+                if (btnGuardar) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.textContent = originalText;
+                }
+            }
+        };
+
+        // ** FUNCIÓN DE BÚSQUEDA **
+        window.buscarPorTexto = async function () {
+            const textoBusqueda = document.getElementById("busquedaTexto").value.trim();
+            
+            if (!textoBusqueda) {
+                alert("Por favor, ingrese el Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono para buscar.");
+                return;
+            }
+            
+            const btnBuscar = document.querySelector('button[onclick="buscarPorTexto()"]');
+            const originalText = btnBuscar.textContent;
+            btnBuscar.disabled = true;
+            btnBuscar.textContent = "Buscando...";
+
+            try {
+                const profilesRef = collection(db, "perfiles");
+                const lowerCaseSearch = textoBusqueda.toLowerCase();
+                let querySnapshot;
+
+                querySnapshot = await getDocs(profilesRef);
+
+                let docSnap = null;
+                const docs = querySnapshot.docs;
+
+                // Búsqueda en el cliente: Nombre (parcial e insensitive) O Emprendimiento (parcial e insensitive) O Teléfono (exacto)
+                for (const doc of docs) {
+                    const data = doc.data();
+                    const nombre = data.nombre?.toLowerCase() || '';
+                    const emprendimiento = data.nombreEmprendimiento?.toLowerCase() || '';
+                    const telefono = data.telefono || '';
+
+                    const match = nombre.includes(lowerCaseSearch) || 
+                                  emprendimiento.includes(lowerCaseSearch) ||
+                                  telefono === textoBusqueda; 
+
+                    if (match) {
+                        docSnap = doc;
+                        break;
+                    }
+                }
+
+
+                if (!docSnap) {
+                    alert(`❌ No se encontró ningún perfil que coincida con: ${textoBusqueda}. Puede crear uno nuevo.`);
+                    document.getElementById("docId").value = ""; 
+                    document.getElementById("dataForm").reset(); 
+                    document.getElementById("busquedaTexto").value = textoBusqueda;
+                } else {
+                    llenarFormulario(docSnap.data(), docSnap.id); 
+                }
+
+            } catch (error) {
+                console.error("Error al buscar el documento:", error);
+                alert("❌ Ocurrió un error al intentar la búsqueda.");
+            } finally {
+                btnBuscar.disabled = false;
+                btnBuscar.textContent = originalText;
+            }
+        };
+
+        window.borrarArtesana = async function () {
+            const docId = document.getElementById("docId").value.trim();
+
+            if (!docId) {
+                alert("❌ Error: No se ha cargado ningún perfil para borrar. Use el botón 'Buscar' primero.");
+                return;
+            }
+
+            // MENSAJE DE CONFIRMACIÓN SIMPLE (SIN ID)
+            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE este registro? Esta acción es irreversible.`)) {
+                return;
+            }
+
+            const btnBorrar = document.getElementById("btnBorrarBD");
+            const originalText = btnBorrar.textContent;
+            btnBorrar.disabled = true;
+            btnBorrar.textContent = "Borrando...";
+
+            try {
+                const docRef = doc(db, "perfiles", docId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    await deleteDoc(docRef); 
+
+                    document.getElementById("dataForm").reset();
+                    document.getElementById("docId").value = "";
+                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
+                    alert(`✅ El registro ha sido borrado exitosamente.`);
+                } else {
+                    alert("❌ Error: El documento no existe en Firestore, pero el formulario se ha limpiado.");
+                    document.getElementById("dataForm").reset();
+                    document.getElementById("docId").value = "";
+                }
+
+            } catch (error) {
+                console.error("Error al borrar el registro:", error);
+                alert(`❌ Ocurrió un error al intentar borrar el registro: ${error.message}`);
+            } finally {
+                btnBorrar.disabled = false;
+                btnBorrar.textContent = originalText;
+            }
+        };
+        
+        window.limpiarFormularioParaNuevoRegistro = function() {
+            document.getElementById("dataForm").reset(); 
+            document.getElementById("docId").value = ""; 
+            document.getElementById("busquedaTexto").value = ""; 
+            document.getElementById("logoPreview").innerHTML = ""; 
+            document.getElementById("productPreviews").innerHTML = ""; 
+            document.getElementById("qrCanvas").style.display = 'none'; 
+            document.getElementById("qrMensaje").textContent = ""; 
+            alert("✅ Formulario listo para un Nuevo Registro.");
+        }
+
+        // ======================== LÓGICA DE QR Y PDF ========================
+        const { jsPDF } = window.jspdf;
+
+        function validarCampos() {
+            const form = document.getElementById("dataForm");
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+            return true;
+        }
+
+        function generarDatosQR() {
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagramUser = document.getElementById("instagram").value.trim();
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            const formato = document.querySelector('input[name="formatoQR"]:checked').value;
+
+            if (formato === "1") {
+                return instagramUrl;
+            } else {
+                return `
+Nombre: ${nombre}
+Teléfono: ${telefono}
+Ubicación: ${ubicacion}
+Emprendimiento: ${nombreEmprendimiento}
+Descripción: ${descripcion}
+Instagram: ${instagramUser}
+Link: ${instagramUrl}
+                `;
+            }
+        }
+
+        window.generarQR = function() {
+            if (!validarCampos()) return;
+            
+            const datosQR = generarDatosQR();
+            const qrCanvas = document.getElementById("qrCanvas");
+            const qrMensaje = document.getElementById("qrMensaje");
+            qrCanvas.style.display = 'none';
+
+            QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
+                if (error) {
+                    qrMensaje.textContent = "Error al generar el QR.";
+                } else {
+                    qrMensaje.textContent = "QR generado correctamente ✅";
+                    qrCanvas.style.display = 'block';
+                }
+            });
+        }
+
+        window.generarPDF = async function() {
+            if (!validarCampos()) return;
+            
+            const qrCanvas = document.getElementById("qrCanvas");
+            const qrMensaje = document.getElementById("qrMensaje");
+            const datosQR = generarDatosQR();
+
+            try {
+                await new Promise((resolve, reject) => {
+                    QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
+                        if (error) reject("Error al generar el QR para el PDF.");
+                        else resolve();
+                    });
+                });
+                qrMensaje.textContent = "QR para PDF generado correctamente ✅";
+            } catch (error) {
+                alert(error);
+                return;
+            }
+            
+            // 2. Obtener datos del formulario
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+            const ubicacion = document.getElementById("ubicacion").value.trim();
+            const nombreEmprendimiento = document.getElementById("nombreEmprendimiento").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+            const instagramUser = document.getElementById("instagram").value.trim();
+            const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
+            
+            // Inputs de archivos que ahora SÍ contienen el archivo para el PDF local
+            const logoInput = document.getElementById("logo");
+            const producto1Input = document.getElementById("producto1");
+            const producto2Input = document.getElementById("producto2");
+            const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
+            const descProducto2 = document.getElementById("descProducto2").value.trim() || "Producto 2";
+            
+            const doc = new jsPDF();
+            const qrImg = qrCanvas.toDataURL("image/png");
+            const defaultLogoPdfUrl = document.getElementById("defaultLogo").src;
+
+            // 3. Diseño del PDF (A4)
+            if (defaultLogoPdfUrl) {
+                doc.addImage(defaultLogoPdfUrl, "PNG", 20, 15, 30, 30);
+            }
+
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Ministerio de la Mujer", 60, 20);
+            doc.setFontSize(12);
+            doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 60, 28);
+            doc.setFontSize(14);
+            doc.text("Perfil Digital - Artesanas y Emprendedoras", 60, 40);
+            
+            doc.addImage(qrImg, "PNG", 140, 50, 60, 60); 
+
+            let yOffset = 55;
+            doc.setFontSize(12);
+            
+            const addText = (title, content) => {
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.text(content, 20, yOffset + 5);
+                yOffset += 15;
+            };
+
+            addText(`Nombre de la Emprendedora: `, nombre);
+            addText(`Teléfono: `, telefono);
+            addText(`Ubicación: `, ubicacion);
+            yOffset += 5;
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Nombre del Emprendimiento: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${nombreEmprendimiento}`, 20, yOffset + 5);
+            yOffset += 20;
+
+            async function addLogoIfUploaded() {
+                if (logoInput.files[0]) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.text("Logo del Emprendimiento", 20, yOffset - 10); 
+                    doc.setFont('helvetica', 'normal');
+                    
+                    const imgX = 20; 
+                    const imgY = yOffset - 5; 
+                    const imgWidth = 50; 
+                    const imgHeight = 50; 
+                    
+                    doc.rect(imgX - 2, imgY - 2, imgWidth + 4, imgHeight + 4); 
+                    
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                doc.addImage(e.target.result, "PNG", imgX, imgY, imgWidth, imgHeight); 
+                                yOffset += 55; 
+                                resolve();
+                            } catch (err) {
+                                reject(err);
+                            }
+                        };
+                        reader.readAsDataURL(logoInput.files[0]);
+                    });
+                }
+                return Promise.resolve();
+            }
+
+            function addMainText() {
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Descripción: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                
+                const splitDescription = doc.splitTextToSize(descripcion, 170);
+                doc.text(splitDescription, 20, yOffset + 5);
+                yOffset += (splitDescription.length * 5) + 5;
+
+                yOffset += 5; 
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Instagram: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.text(instagramUser, 20, yOffset + 5);
+                yOffset += 15;
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Link: `, 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+                doc.textWithLink(instagramUrl, 20, yOffset + 5, { url: instagramUrl });
+                yOffset += 15;
+            }
+
+            async function addProducts() {
+                doc.setFont('helvetica', 'bold');
+                doc.text("Productos de Muestra", 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+
+                const boxX = 18;
+                const boxY = yOffset + 3;
+                const boxWidth = 120;
+                const boxHeight = 58;
+                
+                doc.rect(boxX, boxY, boxWidth, boxHeight); 
+                yOffset += 10;
+                
+                const productPromises = [];
+
+                const addProductImage = (fileInput, description, xOffset) => {
+                    if (fileInput.files[0]) {
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const imgX = boxX + xOffset;
+                                const imgY = yOffset + 1.5;                         
+                                doc.addImage(e.target.result, "PNG", imgX, imgY, 40, 40);
+                                
+                                doc.setFontSize(8); 
+                                doc.text(description, imgX + 20, imgY + 45, {align: 'center'}); 
+                                resolve();
+                            };
+                            reader.readAsDataURL(fileInput.files[0]);
+                        });
+                    }
+                    return Promise.resolve();
+                };
+
+                productPromises.push(addProductImage(producto1Input, descProducto1, 2));
+                productPromises.push(addProductImage(producto2Input, descProducto2, 60));
+
+                return Promise.all(productPromises);
+            }
+
+            try {
+                await addLogoIfUploaded(); 
+                addMainText();
+                
+                if (producto1Input.files[0] || producto2Input.files[0]) {
+                    await addProducts();
+                }
+
+                doc.save(`${nombreEmprendimiento}_perfil.pdf`);
+            } catch (err) {
+                alert("Hubo un error al generar el PDF. Por favor, inténtelo de nuevo.");
+                console.error(err);
+            }
+        }
+
+        // ======================== LÓGICA DE PREVISUALIZACIÓN DE IMÁGENES ========================
+
+        function displayPreview(file, description, containerId) {
+            const container = document.getElementById(containerId);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const item = document.createElement("div");
+                item.className = "preview-item";
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.alt = description;
+                item.appendChild(img);
+                const desc = document.createElement("p");
+                desc.className = "description";
+                desc.textContent = description;
+                item.appendChild(desc);
+                
+                document.getElementById(containerId).appendChild(item);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateProductPreviews() {
+            const container = document.getElementById("productPreviews");
+            container.innerHTML = ""; 
+            const producto1Input = document.getElementById("producto1");
+            const producto2Input = document.getElementById("producto2");
+            const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
+            const descProducto2 = document.getElementById("descProducto2").value.trim() || "Producto 2";
+
+            if (producto1Input.files && producto1Input.files[0]) {
+                displayPreview(producto1Input.files[0], descProducto1, "productPreviews");
+            }
+            if (producto2Input.files && producto2Input.files[0]) {
+                displayPreview(producto2Input.files[0], descProducto2, "productPreviews");
+            }
+        }
+        
+        document.getElementById("logo").addEventListener("change", function() {
+            const container = document.getElementById("logoPreview");
+            container.innerHTML = ""; 
+            if (this.files && this.files[0]) {
+                displayPreview(this.files[0], "Logo del emprendimiento", "logoPreview");
+            }
+        });
+
+        document.getElementById("producto1").addEventListener("change", updateProductPreviews);
+        document.getElementById("descProducto1").addEventListener("input", updateProductPreviews);
+        document.getElementById("producto2").addEventListener("change", updateProductPreviews);
+        document.getElementById("descProducto2").addEventListener("input", updateProductPreviews);
+
+        window.onload = function() {
+            const defaultLogoImg = document.getElementById("defaultLogo");
+            const headerLogoDisplay = document.getElementById("headerLogoDisplay");
+            if (defaultLogoImg && headerLogoDisplay) {
+                const imgClone = defaultLogoImg.cloneNode(true);
+                imgClone.style.display = 'block';
+                imgClone.style.maxWidth = '150px'; 
+                imgClone.style.height = 'auto';
+                headerLogoDisplay.appendChild(imgClone);
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1>Ministerio de la Mujer</h1>
+    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformación digital</p>
+
+    <div id="headerLogoDisplay"></div>
+    
+    <img id="defaultLogo" src="https://raw.githubusercontent.com/rgancedov-jpg/artesanas-digital/main/logo-nuevo-1_midem.png" alt="Logo de Ven Emprende" style="display: none;">
+
+    <form id="dataForm">
+        <section>
+            <h3>Datos de la Emprendedora</h3>
+
+            <input type="hidden" id="docId" value="" />
+
+            <label for="busquedaTexto">Buscar Perfil (Nombre, Emprendimiento o Teléfono)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="busquedaTexto" placeholder="Ej: Ana, Artesanías, 6543-2109" style="flex-grow: 1;" />
+                <button type="button" class="btn" onclick="buscarPorTexto()" style="min-width: 100px;">Buscar 🔍</button>
+            </div>
+            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*Busque por nombre de la emprendedora, nombre del emprendimiento o teléfono.</p>
+            
+
+            <label for="nombre">Nombre de la Emprendedora</label>
+            <input type="text" id="nombre" value="Ana María Rodríguez" required />
+
+            <label for="telefono">Número de Teléfono</label>
+            <input type="text" id="telefono" value="6543-2109" required />
+            
+            <label for="ubicacion">Ubicación del Emprendimiento</label>
+            <input type="text" id="ubicacion" value="Ciudad de Panamá, Panamá" required />
+
+            <label for="nombreEmprendimiento">Nombre del emprendimiento</label>
+            <input type="text" id="nombreEmprendimiento" value="Artesanías Panameñas" required />
+        </section>
+
+        <section>
+            <label for="logo">Sube un logo diferente (opcional)</label>
+            <input type="file" id="logo" accept="image/*" />
+            <div id="logoPreview" class="preview-container"></div>
+            
+            <label for="descripcion">Descripción de sus productos</label>
+            <textarea id="descripcion" required>Somos un emprendimiento que se especializa en la creación de productos artesanales únicos, inspirados en la rica cultura y tradiciones de Panamá.</textarea>
+
+            <label for="instagram">Instagram del negocio</label>
+            <input type="text" id="instagram" value="@artesanias_panamenas" required />
+        </section>
+
+        <div class="product-gallery">
+            <h3>Productos de Muestra</h3>
+            <label for="producto1">Producto 1</label>
+            <input type="file" id="producto1" accept="image/*" />
+            <input type="text" id="descProducto1" placeholder="Descripción Producto 1" value="Bolso de fibra natural" />
+
+            <label for="producto2">Producto 2</label>
+            <input type="file" id="producto2" accept="image/*" />
+            <input type="text" id="descProducto2" placeholder="Descripción Producto 2" value="Cuadro de arte Emberá" />
+        </div>
+        
+        <div id="productPreviews" class="preview-container"></div>
+        
+        <div class="opciones">
+            <b>Formato del QR:</b><br>
+            <label><input type="radio" name="formatoQR" value="1" checked> Solo Instagram directo</label><br>
+            <label><input type="radio" name="formatoQR" value="2"> Todos los datos + Instagram</label>
+        </div>
+        
+        <div class="btn-container">
+            <button type="button" class="btn" onclick="limpiarFormularioParaNuevoRegistro()">Nuevo Perfil</button>
+            <button type="button" class="btn" onclick="generarQR()">Generar QR</button>
+            <button type="button" class="btn" onclick="generarPDF()">Descargar PDF</button>
+            <button type="button" id="btnBorrarBD" class="btn-delete" onclick="borrarArtesana()">Borrar Registro</button>
+            <button type="button" id="btnGuardarBD" class="btn-save" onclick="guardarEnBD()">Guardar en BD</button>
+        </div>
+    </form>
+
+    <div id="qrDisplay">
+        <canvas id="qrCanvas" style="display:none;"></canvas>
+        <div id="qrMensaje"></div>
+    </div>
+</body>
+</html>
