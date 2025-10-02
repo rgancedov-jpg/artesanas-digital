@@ -5,25 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Perfil Digital - Ministerio de la Mujer</title>
 <!-- 
-🚀 Resumen de las Nuevas Funcionalidades
-Esta versión consolida el formulario como una herramienta completa de gestión y difusión de perfiles (CRUD), integrando la base de datos (Firebase) y las utilidades de exportación.
-1. Funcionalidad de los Botones (CRUD y Utilidades)
-Los botones permiten ejecutar las funciones principales de la aplicación:
-Botón	Acción Principal	Detalle y Objetivo
-Buscar 🔍	Lectura (Read)	Permite cargar el perfil mediante **búsqueda total o parcial** por Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono, facilitando la visualización o edición.
-Guardar en BD	Creación/Actualización (Create/Update)	Es el botón clave. Persiste los datos en Firestore y las imágenes en Storage. Además, activa la generación automática del Código Amigable si el perfil es nuevo.
-Borrar Registro	Eliminación (Delete)	Borra permanentemente el registro de la base de datos y elimina todas las imágenes (logo y productos) asociadas de Firebase Storage.
-Generar QR	Herramienta	Muestra en pantalla el Código QR interactivo, con opciones para incluir solo el link de Instagram o todos los datos del perfil.
-Descargar PDF	Herramienta	Genera un PDF listo para imprimir que incluye todos los datos del perfil, las imágenes y el Código QR.
-Limpiar Filtro 🔄	Herramienta	Restablece el formulario a un estado vacío para un nuevo registro o limpia completamente los resultados de búsqueda, **ejecutándose instantáneamente sin mensajes de confirmación**.
-2. Otras Mejoras de la Versión
-Implementación de un algoritmo de **búsqueda flexible (total y parcial)** que ignora mayúsculas/minúsculas y acentos, y realiza coincidencia de subcadenas en los campos clave (Nombre, Emprendimiento, Teléfono).
-Reorganización del formulario para seguir el orden de captura solicitado (Artesana, Emprendimiento, Teléfono, Ubicación, Logo, Descripción, Instagram).
-Consolidación del Código: Todo el proyecto (HTML, CSS y la lógica de Firebase) está ahora contenido en un solo archivo para una gestión más sencilla.
-Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta dentro del documento PDF, optimizando la visibilidad.
-Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Firebase.
+Documentación Consolidada - Perfiles Digitales (v2)
+
+Esta documentación detalla las funcionalidades de la última versión del formulario principal y el panel de administración.
+I. Funcionalidades del Formulario Principal (`index.html`)
+
+🚀 Resumen: Esta versión consolida el formulario como una herramienta completa de gestión y difusión de perfiles (CRUD).
+1. Botones (CRUD y Utilidades)
+Botón 	Acción Principal 	Detalle y Objetivo
+Buscar 🔍 	Lectura (Read) 	Permite cargar el perfil mediante búsqueda total o parcial por Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono.
+Guardar en BD 	Creación/Actualización (Create/Update) 	Persiste los datos en Firestore y las imágenes en Cloudinary. Activa la generación automática del Código Amigable si el perfil es nuevo.
+Borrar Registro 	Eliminación (Delete) 	Borra permanentemente el registro de la base de datos y elimina las imágenes asociadas.
+Generar QR 	Herramienta 	Muestra el Código QR interactivo, con opciones para incluir solo el link de Instagram o todos los datos del perfil.
+Descargar PDF 	Herramienta 	Genera un PDF listo para imprimir que incluye todos los datos del perfil, las imágenes y el Código QR.
+Limpiar Filtro 🔄 	Herramienta 	Restablece el formulario a un estado vacío o limpia completamente los resultados de búsqueda, ejecutándose instantáneamente sin confirmación.
+2. Mejoras Adicionales del Formulario
+
+    Implementación de un algoritmo de **búsqueda flexible** que ignora mayúsculas/minúsculas y acentos, y realiza coincidencia de subcadenas en los campos clave (Nombre, Emprendimiento, Teléfono).
+    Reorganización del formulario para seguir el orden de captura solicitado (Artesana, Emprendimiento, Teléfono, Ubicación, Logo, Descripción, Instagram).
+    Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta, optimizando la visibilidad.
+    Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Cloudinary.
+
+3. 📦 Almacenamiento de imágenes con Cloudinary
+
+El formulario en `index.html` está configurado para que todas las imágenes (logo y productos) se guarden en Cloudinary, no en Firebase Storage.
+
+Configuración necesaria en Cloudinary:
+
+    Cloud Name: djvnsgfcl
+    Upload Preset: perfil_artesana (debe estar configurado como unsigned).
+
+Funcionamiento:
+
+    Al subir un archivo, la función uploadFileToCloudinary(file) envía la imagen a Cloudinary.
+    Cloudinary responde con la URL pública segura (secure_url).
+    Esa URL se guarda en Firestore dentro del documento del perfil.
+
+📌 Con esto, la aplicación funciona con Firestore para datos y Cloudinary para imágenes.
+II. Novedades del Panel de Administración (`administracion.html`)
+
+El archivo de administración incluye nuevas funcionalidades enfocadas en la gestión de la tabla, edición y reportes masivos.
+1. Generación de Reportes Masivos
+Botón 	Acción Principal 	Detalle y Objetivo
+Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltiples páginas (una por perfil) con un diseño optimizado para impresión. Obtiene todos los registros de la BD.
+📊 Exportar a XLSX 	Exportación 	Exporta todos los campos de todos los registros a una hoja de cálculo. La descarga incluye toda la base de datos, ignorando cualquier filtro de la tabla.
+📋 Ver Reporte de Datos (Tabla Completa) 	Reporte Web (Nuevo) 	Abre una nueva pestaña con reporte_bd_emprendedoras.html. Muestra la tabla completa en tiempo real, con contenido truncado a 50 caracteres para facilitar la impresión.
+2. Estructura y Estilo del Reporte Web (`reporte_bd_emprendedoras.html`)
+
+    Diseño de Impresión: Incluye un botón para window.print() que permite guardar el reporte como PDF o imprimirlo.
+    Optimización de Columnas: Columnas clave (Ubicación, Descripción, Productos) tienen su contenido **truncado a 50 caracteres** para que la tabla quepa en una impresión horizontal.
+    Carga en Tiempo Real: El reporte carga los datos directamente de Firebase en tiempo real, asegurando que la tabla mostrada esté siempre actualizada.
+
+3. Ajustes de Diseño y Navegación en `administracion.html`
+
+    Paginación Mejorada: Uso de paginación real (limit & startAfter) para manejar grandes bases de datos.
+    Botón Renombrado: El enlace al reporte web ahora es "📋 Ver Reporte de Datos (Tabla Completa)" para ser más explícito.
+    Lógica de Edición: Al hacer clic en "✏️ Modificar" o activar la edición, los botones de navegación (Anterior/Siguiente) se **desactivan** para evitar la pérdida de cambios.
+    Actualización Post-Guardado: Después de usar "💾 Guardar Cambios", el panel de detalle recarga el registro actualizado y la tabla principal se refresca automáticamente.
 -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
@@ -227,10 +267,16 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-        import { getStorage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
-
+        
         // =================================================================================
-        // CONFIGURACIÓN DE FIREBASE (Tomada del archivo subido)
+        // CONFIGURACI脫N DE CLOUDINARY (Tu Cloud Name)
+        // =================================================================================
+        const CLOUDINARY_CLOUD_NAME = 'djvnsgfcl'; // 猬咃笍 隆Tu Cloud Name confirmado!
+        const CLOUDINARY_UPLOAD_PRESET = 'perfil_artesana';  // 猬咃笍 Nombre del Preset que debes crear (Unsigned)
+        // =================================================================================
+        
+        // =================================================================================
+        // CONFIGURACI脫N DE FIREBASE (Tomada del archivo subido)
         // =================================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
@@ -246,10 +292,66 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app); 
 
-        // ======================== FUNCIONES AUXILIARES ========================
+        // ======================== FUNCI脫N DE SUBIDA A CLOUDINARY ========================
+
+        /**
+         * Sube un archivo (imagen) a Cloudinary usando la API REST (Subida No Firmada).
+         * @param {File} file El objeto de archivo (imagen) a subir.
+         * @returns {Promise<string>} La URL p煤blica de la imagen subida, o null si falla.
+         */
+        async function uploadFileToCloudinary(file) {
+            if (!file) return null;
         
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        
+            const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+        
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Error de subida a Cloudinary:', errorData);
+                    alert(`鉂?Cloudinary Error: ${errorData.error.message || response.statusText}. Revisa tu 'Upload Preset' y 'Cloud Name'.`);
+                    return null;
+                }
+        
+                const data = await response.json();
+                
+                // Retorna la URL segura de la imagen
+                return data.secure_url; 
+        
+            } catch (error) {
+                console.error('Error al subir la imagen:', error);
+                alert(`鉂?Error al subir la imagen a Cloudinary. Revisa tu conexi贸n.`);
+                return null; 
+            }
+        }
+
+        // ======================== FUNCIONES AUXILIARES DE B脷SQUEDA Y DISPLAY ========================
+        
+        /**
+         * Normaliza un n煤mero de tel茅fono eliminando todos los caracteres que no sean d铆gitos.
+         */
+        function normalizePhone(phone) {
+            if (!phone) return '';
+            return phone.replace(/\D/g, ''); 
+        }
+
+        /**
+         * Limpia una cadena de texto, eliminando acentos y convirti茅ndola a min煤sculas.
+         */
+        function cleanString(str) {
+            if (!str) return '';
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
         function llenarFormulario(data, docId) {
             document.getElementById("docId").value = docId || ""; 
             document.getElementById("nombre").value = data.nombre || "";
@@ -262,13 +364,69 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             document.getElementById("descProducto1").value = data.productos?.[0]?.descripcion || "";
             document.getElementById("descProducto2").value = data.productos?.[1]?.descripcion || "";
 
-            // Ya no se muestra el alert de perfil cargado para seguir el comportamiento de administracion.html
-            // document.getElementById("codigoSecuencialOculto").value = data.codigoSecuencial || ""; 
+            // 鈿狅笍 NUEVO: Guardar las URLs de la base de datos en campos ocultos para uso en PDF
+            document.getElementById("logoURL_db").value = data.logoURL || "";
+            document.getElementById("producto1URL_db").value = data.productos?.[0]?.url || "";
+            document.getElementById("producto2URL_db").value = data.productos?.[1]?.url || "";
+            
+            // LIMPIA LOS INPUTS TYPE="FILE" para forzar la resubida si se quiere cambiar la imagen
+            document.getElementById("logo").value = null;
+            document.getElementById("producto1").value = null;
+            document.getElementById("producto2").value = null;
+
+            // Mostrar el logo y productos existentes
+            displayRemotePreviews(data);
         }
         
+        /**
+         * Muestra las previsualizaciones de im谩genes ya guardadas en Firestore (v铆a URL).
+         */
+        function displayRemotePreviews(data) {
+            const logoContainer = document.getElementById("logoPreview");
+            const prodContainer = document.getElementById("productPreviews");
+            logoContainer.innerHTML = "";
+            prodContainer.innerHTML = "";
+
+            // 1. Logo
+            if (data.logoURL) {
+                displayImageFromURL(data.logoURL, "Logo (Existente)", "logoPreview");
+            }
+            
+            // 2. Productos
+            const prod1 = data.productos?.[0];
+            const prod2 = data.productos?.[1];
+
+            if (prod1?.url) {
+                 displayImageFromURL(prod1.url, prod1.descripcion || "Producto 1 (Existente)", "productPreviews");
+            }
+            if (prod2?.url) {
+                 displayImageFromURL(prod2.url, prod2.descripcion || "Producto 2 (Existente)", "productPreviews");
+            }
+        }
+        
+        /**
+         * Funci贸n auxiliar para mostrar im谩genes desde una URL.
+         */
+        function displayImageFromURL(url, description, containerId) {
+             const container = document.getElementById(containerId);
+             const item = document.createElement("div");
+             item.className = "preview-item";
+             const img = document.createElement("img");
+             img.src = url;
+             img.alt = description;
+             item.appendChild(img);
+             const desc = document.createElement("p");
+             desc.className = "description";
+             desc.textContent = description;
+             item.appendChild(desc);
+             
+             container.appendChild(item);
+        }
+
+
         // ======================== FUNCIONES PRINCIPALES DE FIREBASE (CRUD) ========================
 
-        // ** FUNCIÓN CLAVE **: GUARDA O ACTUALIZA EN LA BASE DE DATOS
+        // ** FUNCI脫N CLAVE **: GUARDA O ACTUALIZA EN LA BASE DE DATOS
         window.guardarEnBD = async function () {
             const form = document.getElementById("dataForm");
             if (!form.checkValidity()) {
@@ -282,7 +440,7 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             const telefono = document.getElementById("telefono").value.trim();
                 
             if (!nombre || !telefono) {
-                alert("ERROR: Debe ingresar el Nombre y Teléfono.");
+                alert("ERROR: Debe ingresar el Nombre y Tel茅fono.");
                 return;
             }
 
@@ -293,12 +451,13 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             
             const btnGuardar = document.getElementById("btnGuardarBD");
             const originalText = btnGuardar ? btnGuardar.textContent : null;
+            
             if (btnGuardar) {
                 btnGuardar.disabled = true;
-                btnGuardar.textContent = docId ? "Actualizando..." : "Guardando...";
+                btnGuardar.textContent = docId ? "Subiendo im谩genes y actualizando..." : "Subiendo im谩genes y guardando...";
             }
 
-            // --- Lógica de imágenes (Deshabilitada) ---
+            // --- L贸gica de im谩genes (ACTIVA CON CLOUDINARY) ---
             const logoFile = document.getElementById("logo").files[0];
             const producto1File = document.getElementById("producto1").files[0];
             const producto2File = document.getElementById("producto2").files[0];
@@ -306,21 +465,48 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             let logoURL = null;
             let producto1URL = null;
             let producto2URL = null;
-
-            if (logoFile || producto1File || producto2File) {
-                alert("⚠️ Subida de imágenes OMITIDA. Esta funcionalidad está desactivada temporalmente. Solo se guardará la data de texto.");
+            
+            // OBTENER DATOS EXISTENTES PARA MANTENER LAS URLs SI NO SE SUBE UN ARCHIVO NUEVO
+            let existingData = {};
+            if (docId) {
+                const docSnap = await getDoc(doc(db, "perfiles", docId));
+                existingData = docSnap.exists() ? docSnap.data() : {};
+                
+                logoURL = existingData.logoURL || null;
+                producto1URL = existingData.productos?.[0]?.url || null;
+                producto2URL = existingData.productos?.[1]?.url || null;
             }
-            // --- Fin Lógica de imágenes ---
+            
+            // Subir solo si se seleccion贸 un nuevo archivo, y actualizar la URL
+            const uploadPromises = [
+                logoFile ? uploadFileToCloudinary(logoFile) : Promise.resolve(logoURL),
+                producto1File ? uploadFileToCloudinary(producto1File) : Promise.resolve(producto1URL),
+                producto2File ? uploadFileToCloudinary(producto2File) : Promise.resolve(producto2URL),
+            ];
+
+            // Esperar que todas las subidas/resoluciones terminen
+            [logoURL, producto1URL, producto2URL] = await Promise.all(uploadPromises);
+
+            // Si alguna URL de imagen es null (fallo en la subida y no exist铆a antes), lo manejamos.
+            if (!logoURL && logoFile || (!producto1URL && producto1File) || (!producto2URL && producto2File)) {
+                 if (btnGuardar) {
+                     btnGuardar.disabled = false;
+                     btnGuardar.textContent = originalText;
+                 }
+                 alert("鉂?ERROR CR脥TICO: Una o m谩s subidas de im谩genes a Cloudinary fallaron. Revisa la consola y las credenciales.");
+                 return;
+            }
+            // --- Fin L贸gica de im谩genes ---
 
             try {
                 const docData = {
                     nombre, telefono, ubicacion, nombreEmprendimiento, descripcion, instagram,
-                    logoURL: logoURL, 
+                    logoURL: logoURL || null, // Usa la URL de Cloudinary o null
                     productos: [
-                        { url: producto1URL, descripcion: document.getElementById("descProducto1").value.trim() || null },
-                        { url: producto2URL, descripcion: document.getElementById("descProducto2").value.trim() || null }
+                        { url: producto1URL || null, descripcion: document.getElementById("descProducto1").value.trim() || null },
+                        { url: producto2URL || null, descripcion: document.getElementById("descProducto2").value.trim() || null }
                     ],
-                    // Campos adicionales para facilitar la búsqueda por texto (minúsculas)
+                    // Campos adicionales para facilitar la b煤squeda por texto (min煤sculas)
                     nombre_lower: nombre.toLowerCase(),
                     nombreEmprendimiento_lower: nombreEmprendimiento.toLowerCase(),
                     updatedAt: new Date().toISOString()
@@ -330,23 +516,26 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
                 if (docId) {
                     docRef = doc(db, "perfiles", docId);
                     await updateDoc(docRef, docData);
-                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
-                    alert("✅ Registro actualizado (TEXTO SOLAMENTE) correctamente.");
+                    alert("鉁?Registro actualizado (incluyendo im谩genes si fueron subidas) correctamente.");
                 } else {
                     docRef = await addDoc(collection(db, "perfiles"), {
                         ...docData,
                         createdAt: new Date().toISOString()
                     });
                     document.getElementById("docId").value = docRef.id; 
-                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
-                    alert("✅ Datos guardados (TEXTO SOLAMENTE) correctamente.");
+                    alert("鉁?Datos guardados (incluyendo im谩genes) correctamente.");
                 }
 
                 generarQR();
+                // Volver a cargar el formulario para ver las previsualizaciones actualizadas
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    llenarFormulario(docSnap.data(), docSnap.id);
+                }
 
             } catch (err) {
                 console.error("Error guardando en Firebase:", err);
-                alert("❌ Ocurrió un error al guardar en Firebase. Revisa la consola (F12).");
+                alert("鉂?Ocurri贸 un error al guardar en Firebase. Revisa la consola (F12).");
             } finally {
                 if (btnGuardar) {
                     btnGuardar.disabled = false;
@@ -355,12 +544,12 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             }
         };
 
-        // ** FUNCIÓN DE BÚSQUEDA **
+        // ** FUNCI脫N DE B脷SQUEDA (ACTUALIZADA con l贸gica flexible) **
         window.buscarPorTexto = async function () {
             const textoBusqueda = document.getElementById("busquedaTexto").value.trim();
             
             if (!textoBusqueda) {
-                alert("Por favor, ingrese el Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono para buscar.");
+                alert("Por favor, ingrese el Nombre de la Emprendedora, Nombre del Emprendimiento o Tel茅fono para buscar.");
                 return;
             }
             
@@ -371,24 +560,39 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
 
             try {
                 const profilesRef = collection(db, "perfiles");
-                const lowerCaseSearch = textoBusqueda.toLowerCase();
-                let querySnapshot;
-
-                querySnapshot = await getDocs(profilesRef);
+                
+                // 1. Preparamos los t茅rminos de b煤squeda:
+                const cleanSearch = cleanString(textoBusqueda); // "Mar铆a Artesana" -> "maria artesana"
+                const phoneSearchDigits = normalizePhone(textoBusqueda); // "Maria 654" -> "654"
+                
+                let querySnapshot = await getDocs(profilesRef);
 
                 let docSnap = null;
                 const docs = querySnapshot.docs;
 
-                // Búsqueda en el cliente: Nombre (parcial e insensitive) O Emprendimiento (parcial e insensitive) O Teléfono (exacto)
+                // B煤squeda en el cliente: flexible con acentos y subcadenas
                 for (const doc of docs) {
                     const data = doc.data();
-                    const nombre = data.nombre?.toLowerCase() || '';
-                    const emprendimiento = data.nombreEmprendimiento?.toLowerCase() || '';
-                    const telefono = data.telefono || '';
+                    
+                    // Limpiamos los datos del documento para la comparaci贸n:
+                    const cleanNombre = cleanString(data.nombre);
+                    const cleanEmprendimiento = cleanString(data.nombreEmprendimiento);
+                    const normalizedTelefono = normalizePhone(data.telefono); // Siempre normalizado a d铆gitos
 
-                    const match = nombre.includes(lowerCaseSearch) || 
-                                  emprendimiento.includes(lowerCaseSearch) ||
-                                  telefono === textoBusqueda; 
+                    // CRITERIO DE MATCH:
+                    let match = false;
+                    
+                    // Criterio A: Coincidencia parcial en Nombre/Emprendimiento (con limpieza de acentos)
+                    if (cleanNombre.includes(cleanSearch) || cleanEmprendimiento.includes(cleanSearch)) {
+                        match = true;
+                    }
+
+                    // Criterio B: Coincidencia parcial de d铆gitos en Tel茅fono (solo se eval煤a si el t茅rmino tiene d铆gitos)
+                    if (!match && phoneSearchDigits.length > 0) { 
+                        if (normalizedTelefono.includes(phoneSearchDigits)) {
+                            match = true;
+                        }
+                    }
 
                     if (match) {
                         docSnap = doc;
@@ -396,19 +600,28 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
                     }
                 }
 
-
                 if (!docSnap) {
-                    alert(`❌ No se encontró ningún perfil que coincida con: ${textoBusqueda}. Puede crear uno nuevo.`);
+                    alert(`鉂?No se encontr贸 ning煤n perfil que coincida con: ${textoBusqueda}. Puede crear uno nuevo.`);
                     document.getElementById("docId").value = ""; 
                     document.getElementById("dataForm").reset(); 
                     document.getElementById("busquedaTexto").value = textoBusqueda;
+                    
+                    // Asegurar que las previsualizaciones y QR se limpien
+                    document.getElementById("logoPreview").innerHTML = ""; 
+                    document.getElementById("productPreviews").innerHTML = ""; 
+                    document.getElementById("qrCanvas").style.display = 'none'; 
+                    document.getElementById("qrMensaje").textContent = ""; 
+                    document.getElementById("logoURL_db").value = ""; // Limpiar campos ocultos
+                    document.getElementById("producto1URL_db").value = "";
+                    document.getElementById("producto2URL_db").value = "";
+                    
                 } else {
                     llenarFormulario(docSnap.data(), docSnap.id); 
                 }
 
             } catch (error) {
                 console.error("Error al buscar el documento:", error);
-                alert("❌ Ocurrió un error al intentar la búsqueda.");
+                alert("鉂?Ocurri贸 un error al intentar la b煤squeda.");
             } finally {
                 btnBuscar.disabled = false;
                 btnBuscar.textContent = originalText;
@@ -419,12 +632,12 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             const docId = document.getElementById("docId").value.trim();
 
             if (!docId) {
-                alert("❌ Error: No se ha cargado ningún perfil para borrar. Use el botón 'Buscar' primero.");
+                alert("鉂?Error: No se ha cargado ning煤n perfil para borrar. Use el bot贸n 'Buscar' primero.");
                 return;
             }
 
-            // MENSAJE DE CONFIRMACIÓN SIMPLE (SIN ID)
-            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE este registro? Esta acción es irreversible.`)) {
+            // MENSAJE DE CONFIRMACI脫N SIMPLE (SIN ID)
+            if (!confirm(`鈿狅笍 驴Est谩 seguro que desea BORRAR PERMANENTEMENTE este registro? Esta acci贸n es irreversible.`)) {
                 return;
             }
 
@@ -442,17 +655,17 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
 
                     document.getElementById("dataForm").reset();
                     document.getElementById("docId").value = "";
-                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
-                    alert(`✅ El registro ha sido borrado exitosamente.`);
+                    // MENSAJE DE 脡XITO SIMPLE (SIN ID)
+                    alert(`鉁?El registro ha sido borrado exitosamente.`);
                 } else {
-                    alert("❌ Error: El documento no existe en Firestore, pero el formulario se ha limpiado.");
+                    alert("鉂?Error: El documento no existe en Firestore, pero el formulario se ha limpiado.");
                     document.getElementById("dataForm").reset();
                     document.getElementById("docId").value = "";
                 }
 
             } catch (error) {
                 console.error("Error al borrar el registro:", error);
-                alert(`❌ Ocurrió un error al intentar borrar el registro: ${error.message}`);
+                alert(`鉂?Ocurri贸 un error al intentar borrar el registro: ${error.message}`);
             } finally {
                 btnBorrar.disabled = false;
                 btnBorrar.textContent = originalText;
@@ -467,11 +680,53 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             document.getElementById("productPreviews").innerHTML = ""; 
             document.getElementById("qrCanvas").style.display = 'none'; 
             document.getElementById("qrMensaje").textContent = ""; 
-            alert("✅ Formulario listo para un Nuevo Registro.");
+            document.getElementById("logoURL_db").value = ""; // Limpiar campos ocultos
+            document.getElementById("producto1URL_db").value = "";
+            document.getElementById("producto2URL_db").value = "";
+        }
+        
+        // ** FUNCI脫N PARA LIMPIAR EL FILTRO DE B脷SQUEDA Y EL FORMULARIO **
+        window.resetSearchFilter = function() {
+            window.limpiarFormularioParaNuevoRegistro(); // Utiliza la funci贸n existente para limpiar todo
         }
 
-        // ======================== LÓGICA DE QR Y PDF ========================
+        // ======================== L脫GICA DE QR Y PDF ========================
         const { jsPDF } = window.jspdf;
+        
+        /**
+         * NUEVO: Obtiene la Data URL (base64) de la imagen, ya sea desde un archivo local o una URL remota.
+         * @param {File} file El objeto de archivo local del input.
+         * @param {string} url La URL remota (de Cloudinary) guardada en el campo oculto.
+         * @returns {Promise<string|null>} La Data URL (base64) de la imagen para jsPDF.
+         */
+        async function getImageSourceForPDF(file, url) {
+            if (file) {
+                // Prioridad 1: Si hay un archivo local (nuevo), usarlo.
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            } else if (url) {
+                // Prioridad 2: Si no hay archivo local pero s铆 hay URL remota, descargarla.
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error("Fallo al cargar la imagen de Cloudinary.");
+                    const blob = await response.blob();
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Error cargando imagen de URL para PDF:", error);
+                    return null;
+                }
+            }
+            return null;
+        }
 
         function validarCampos() {
             const form = document.getElementById("dataForm");
@@ -497,10 +752,10 @@ Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan
             } else {
                 return `
 Nombre: ${nombre}
-Teléfono: ${telefono}
-Ubicación: ${ubicacion}
+Tel茅fono: ${telefono}
+Ubicaci贸n: ${ubicacion}
 Emprendimiento: ${nombreEmprendimiento}
-Descripción: ${descripcion}
+Descripci贸n: ${descripcion}
 Instagram: ${instagramUser}
 Link: ${instagramUrl}
                 `;
@@ -519,7 +774,7 @@ Link: ${instagramUrl}
                 if (error) {
                     qrMensaje.textContent = "Error al generar el QR.";
                 } else {
-                    qrMensaje.textContent = "QR generado correctamente ✅";
+                    qrMensaje.textContent = "QR generado correctamente 鉁?;
                     qrCanvas.style.display = 'block';
                 }
             });
@@ -532,6 +787,7 @@ Link: ${instagramUrl}
             const qrMensaje = document.getElementById("qrMensaje");
             const datosQR = generarDatosQR();
 
+            // 1. Generar QR para el PDF
             try {
                 await new Promise((resolve, reject) => {
                     QRCode.toCanvas(qrCanvas, datosQR, { width: 300 }, function (error) {
@@ -539,7 +795,7 @@ Link: ${instagramUrl}
                         else resolve();
                     });
                 });
-                qrMensaje.textContent = "QR para PDF generado correctamente ✅";
+                qrMensaje.textContent = "QR para PDF generado correctamente 鉁?;
             } catch (error) {
                 alert(error);
                 return;
@@ -554,10 +810,13 @@ Link: ${instagramUrl}
             const instagramUser = document.getElementById("instagram").value.trim();
             const instagramUrl = `https://instagram.com/${instagramUser.replace('@', '')}`;
             
-            // Inputs de archivos que ahora SÍ contienen el archivo para el PDF local
+            // Referencias a inputs y campos ocultos
             const logoInput = document.getElementById("logo");
+            const logoURL_db = document.getElementById("logoURL_db").value;
             const producto1Input = document.getElementById("producto1");
+            const producto1URL_db = document.getElementById("producto1URL_db").value;
             const producto2Input = document.getElementById("producto2");
+            const producto2URL_db = document.getElementById("producto2URL_db").value;
             const descProducto1 = document.getElementById("descProducto1").value.trim() || "Producto 1";
             const descProducto2 = document.getElementById("descProducto2").value.trim() || "Producto 2";
             
@@ -565,7 +824,7 @@ Link: ${instagramUrl}
             const qrImg = qrCanvas.toDataURL("image/png");
             const defaultLogoPdfUrl = document.getElementById("defaultLogo").src;
 
-            // 3. Diseño del PDF (A4)
+            // 3. Dise帽o del PDF (A4)
             if (defaultLogoPdfUrl) {
                 doc.addImage(defaultLogoPdfUrl, "PNG", 20, 15, 30, 30);
             }
@@ -574,7 +833,7 @@ Link: ${instagramUrl}
             doc.setFont('helvetica', 'bold');
             doc.text("Ministerio de la Mujer", 60, 20);
             doc.setFontSize(12);
-            doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 60, 28);
+            doc.text("Impulsando a artesanas y emprendedoras hacia la transformaci贸n digital", 60, 28);
             doc.setFontSize(14);
             doc.text("Perfil Digital - Artesanas y Emprendedoras", 60, 40);
             
@@ -587,14 +846,16 @@ Link: ${instagramUrl}
                 doc.setFont('helvetica', 'bold');
                 doc.text(title, 20, yOffset);
                 doc.setFont('helvetica', 'normal');
-                doc.text(content, 20, yOffset + 5);
-                yOffset += 15;
+                // Manejar texto largo
+                const splitContent = doc.splitTextToSize(content, 110); // Ancho para el texto, dejando espacio para el QR
+                doc.text(splitContent, 20, yOffset + 5);
+                yOffset += (splitContent.length * 5) + 10;
             };
 
             addText(`Nombre de la Emprendedora: `, nombre);
-            addText(`Teléfono: `, telefono);
-            addText(`Ubicación: `, ubicacion);
-            yOffset += 5;
+            addText(`Tel茅fono: `, telefono);
+            addText(`Ubicaci贸n: `, ubicacion);
+            yOffset += 5; // Espacio extra
 
             doc.setFont('helvetica', 'bold');
             doc.text(`Nombre del Emprendimiento: `, 20, yOffset);
@@ -602,8 +863,12 @@ Link: ${instagramUrl}
             doc.text(`${nombreEmprendimiento}`, 20, yOffset + 5);
             yOffset += 20;
 
-            async function addLogoIfUploaded() {
-                if (logoInput.files[0]) {
+            // 4. L贸gica del Logo (Modificada para usar URL de DB)
+            async function addLogo() {
+                // Obtener la Data URL de la imagen (usa local file o URL de BD)
+                const logoSource = await getImageSourceForPDF(logoInput.files[0], logoURL_db);
+                
+                if (logoSource) {
                     doc.setFont('helvetica', 'bold');
                     doc.text("Logo del Emprendimiento", 20, yOffset - 10); 
                     doc.setFont('helvetica', 'normal');
@@ -615,26 +880,15 @@ Link: ${instagramUrl}
                     
                     doc.rect(imgX - 2, imgY - 2, imgWidth + 4, imgHeight + 4); 
                     
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            try {
-                                doc.addImage(e.target.result, "PNG", imgX, imgY, imgWidth, imgHeight); 
-                                yOffset += 55; 
-                                resolve();
-                            } catch (err) {
-                                reject(err);
-                            }
-                        };
-                        reader.readAsDataURL(logoInput.files[0]);
-                    });
+                    // Usar la Data URL obtenida
+                    doc.addImage(logoSource, "JPEG", imgX, imgY, imgWidth, imgHeight); 
+                    yOffset += 55; 
                 }
-                return Promise.resolve();
             }
 
             function addMainText() {
                 doc.setFont('helvetica', 'bold');
-                doc.text(`Descripción: `, 20, yOffset);
+                doc.text(`Descripci贸n: `, 20, yOffset);
                 doc.setFont('helvetica', 'normal');
                 
                 const splitDescription = doc.splitTextToSize(descripcion, 170);
@@ -656,6 +910,7 @@ Link: ${instagramUrl}
                 yOffset += 15;
             }
 
+            // 5. L贸gica de Productos (Modificada para usar URL de DB)
             async function addProducts() {
                 doc.setFont('helvetica', 'bold');
                 doc.text("Productos de Muestra", 20, yOffset);
@@ -669,49 +924,45 @@ Link: ${instagramUrl}
                 doc.rect(boxX, boxY, boxWidth, boxHeight); 
                 yOffset += 10;
                 
-                const productPromises = [];
+                // Funci贸n auxiliar para agregar producto
+                const addProductImage = async (fileInput, url_db, description, xOffset) => {
+                    const imageSource = await getImageSourceForPDF(fileInput.files[0], url_db);
 
-                const addProductImage = (fileInput, description, xOffset) => {
-                    if (fileInput.files[0]) {
-                        return new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                const imgX = boxX + xOffset;
-                                const imgY = yOffset + 1.5;                         
-                                doc.addImage(e.target.result, "PNG", imgX, imgY, 40, 40);
-                                
-                                doc.setFontSize(8); 
-                                doc.text(description, imgX + 20, imgY + 45, {align: 'center'}); 
-                                resolve();
-                            };
-                            reader.readAsDataURL(fileInput.files[0]);
-                        });
+                    if (imageSource) {
+                        const imgX = boxX + xOffset;
+                        const imgY = yOffset + 1.5;                         
+                        doc.addImage(imageSource, "JPEG", imgX, imgY, 40, 40);
+                        
+                        doc.setFontSize(8); 
+                        doc.text(description, imgX + 20, imgY + 45, {align: 'center'}); 
                     }
-                    return Promise.resolve();
                 };
-
-                productPromises.push(addProductImage(producto1Input, descProducto1, 2));
-                productPromises.push(addProductImage(producto2Input, descProducto2, 60));
-
-                return Promise.all(productPromises);
+                
+                // Esperar que ambos productos se carguen y se agreguen
+                await addProductImage(producto1Input, producto1URL_db, descProducto1, 2);
+                await addProductImage(producto2Input, producto2URL_db, descProducto2, 60);
+                
+                // A帽adir el espacio que ocupa la caja de productos
+                yOffset += 65; 
             }
 
             try {
-                await addLogoIfUploaded(); 
+                await addLogo(); // Ahora usa la URL de BD si no hay archivo local
                 addMainText();
                 
-                if (producto1Input.files[0] || producto2Input.files[0]) {
-                    await addProducts();
+                // Solo llama a la funci贸n si hay alg煤n dato de imagen disponible
+                if (producto1Input.files[0] || producto2Input.files[0] || producto1URL_db || producto2URL_db) {
+                    await addProducts(); // Ahora usa la URL de BD si no hay archivo local
                 }
 
                 doc.save(`${nombreEmprendimiento}_perfil.pdf`);
             } catch (err) {
-                alert("Hubo un error al generar el PDF. Por favor, inténtelo de nuevo.");
+                alert("Hubo un error al generar el PDF. Por favor, int茅ntelo de nuevo. (Revisa la consola F12 para detalles).");
                 console.error(err);
             }
         }
 
-        // ======================== LÓGICA DE PREVISUALIZACIÓN DE IMÁGENES ========================
+        // ======================== L脫GICA DE PREVISUALIZACI脫N DE IM脕GENES LOCALES ========================
 
         function displayPreview(file, description, containerId) {
             const container = document.getElementById(containerId);
@@ -747,6 +998,18 @@ Link: ${instagramUrl}
             if (producto2Input.files && producto2Input.files[0]) {
                 displayPreview(producto2Input.files[0], descProducto2, "productPreviews");
             }
+            // Esto asegura que si se est谩 editando una descripci贸n y no hay un archivo nuevo, se mantenga la previsualizaci贸n existente.
+            const data = {
+                 logoURL: document.getElementById("logoURL_db").value,
+                 productos: [
+                     { url: document.getElementById("producto1URL_db").value, descripcion: document.getElementById("descProducto1").value.trim() },
+                     { url: document.getElementById("producto2URL_db").value, descripcion: document.getElementById("descProducto2").value.trim() }
+                 ]
+            };
+            // Vuelve a mostrar las previsualizaciones remotas si no hay archivos locales nuevos
+            if (!producto1Input.files[0] || !producto2Input.files[0]) {
+                 displayRemotePreviews(data);
+            }
         }
         
         document.getElementById("logo").addEventListener("change", function() {
@@ -754,6 +1017,10 @@ Link: ${instagramUrl}
             container.innerHTML = ""; 
             if (this.files && this.files[0]) {
                 displayPreview(this.files[0], "Logo del emprendimiento", "logoPreview");
+            } else {
+                 // Si se borra el archivo local, recupera la vista previa remota si existe
+                 const data = { logoURL: document.getElementById("logoURL_db").value };
+                 displayRemotePreviews(data);
             }
         });
 
@@ -772,12 +1039,15 @@ Link: ${instagramUrl}
                 imgClone.style.height = 'auto';
                 headerLogoDisplay.appendChild(imgClone);
             }
+            
+            // Configurar el bot贸n de reseteo de filtro/formulario
+            document.getElementById("resetSearchButton").onclick = window.resetSearchFilter;
         };
     </script>
 </head>
 <body>
     <h1>Ministerio de la Mujer</h1>
-    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformación digital</p>
+    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformaci贸n digital</p>
 
     <div id="headerLogoDisplay"></div>
     
@@ -788,26 +1058,28 @@ Link: ${instagramUrl}
             <h3>Datos de la Emprendedora</h3>
 
             <input type="hidden" id="docId" value="" />
-
-            <label for="busquedaTexto">Buscar Perfil (Nombre, Emprendimiento o Teléfono)</label>
+            <input type="hidden" id="logoURL_db" value="" />
+            <input type="hidden" id="producto1URL_db" value="" />
+            <input type="hidden" id="producto2URL_db" value="" />
+            <label for="busquedaTexto">Buscar Perfil (Nombre, Emprendimiento o Tel茅fono)</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="busquedaTexto" placeholder="Ej: Ana, Artesanías, 6543-2109" style="flex-grow: 1;" />
-                <button type="button" class="btn" onclick="buscarPorTexto()" style="min-width: 100px;">Buscar 🔍</button>
+                <input type="text" id="busquedaTexto" placeholder="Ej: Ana, Artesan铆as, 6543-2109" style="flex-grow: 1;" />
+                <button type="button" class="btn" onclick="buscarPorTexto()" style="min-width: 100px;">Buscar 馃攳</button>
+                <button type="button" id="resetSearchButton" class="btn" style="min-width: 100px; background-color: #555; hover:background-color: #333;">Limpiar Filtro 馃攧</button>
             </div>
-            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*Busque por nombre de la emprendedora, nombre del emprendimiento o teléfono.</p>
+            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*Busque **flexiblemente** por subcadenas en nombre de la emprendedora, emprendimiento o d铆gitos del tel茅fono.</p>
             
-
             <label for="nombre">Nombre de la Emprendedora</label>
-            <input type="text" id="nombre" value="Ana María Rodríguez" required />
-
-            <label for="telefono">Número de Teléfono</label>
-            <input type="text" id="telefono" value="6543-2109" required />
-            
-            <label for="ubicacion">Ubicación del Emprendimiento</label>
-            <input type="text" id="ubicacion" value="Ciudad de Panamá, Panamá" required />
+            <input type="text" id="nombre" value="Ana Mar铆a Rodr铆guez" required />
 
             <label for="nombreEmprendimiento">Nombre del emprendimiento</label>
-            <input type="text" id="nombreEmprendimiento" value="Artesanías Panameñas" required />
+            <input type="text" id="nombreEmprendimiento" value="Artesan铆as Paname帽as" required />
+            
+            <label for="telefono">N煤mero de Tel茅fono</label>
+            <input type="text" id="telefono" value="6543-2109" required />
+
+            <label for="ubicacion">Ubicaci贸n del Emprendimiento</label>
+            <input type="text" id="ubicacion" value="Ciudad de Panam谩, Panam谩" required />
         </section>
 
         <section>
@@ -815,8 +1087,8 @@ Link: ${instagramUrl}
             <input type="file" id="logo" accept="image/*" />
             <div id="logoPreview" class="preview-container"></div>
             
-            <label for="descripcion">Descripción de sus productos</label>
-            <textarea id="descripcion" required>Somos un emprendimiento que se especializa en la creación de productos artesanales únicos, inspirados en la rica cultura y tradiciones de Panamá.</textarea>
+            <label for="descripcion">Descripci贸n de sus productos</label>
+            <textarea id="descripcion" required>Somos un emprendimiento que se especializa en la creaci贸n de productos artesanales 煤nicos, inspirados en la rica cultura y tradiciones de Panam谩.</textarea>
 
             <label for="instagram">Instagram del negocio</label>
             <input type="text" id="instagram" value="@artesanias_panamenas" required />
@@ -826,11 +1098,11 @@ Link: ${instagramUrl}
             <h3>Productos de Muestra</h3>
             <label for="producto1">Producto 1</label>
             <input type="file" id="producto1" accept="image/*" />
-            <input type="text" id="descProducto1" placeholder="Descripción Producto 1" value="Bolso de fibra natural" />
+            <input type="text" id="descProducto1" placeholder="Descripci贸n Producto 1" value="Bolso de fibra natural" />
 
             <label for="producto2">Producto 2</label>
             <input type="file" id="producto2" accept="image/*" />
-            <input type="text" id="descProducto2" placeholder="Descripción Producto 2" value="Cuadro de arte Emberá" />
+            <input type="text" id="descProducto2" placeholder="Descripci贸n Producto 2" value="Cuadro de arte Ember谩" />
         </div>
         
         <div id="productPreviews" class="preview-container"></div>
