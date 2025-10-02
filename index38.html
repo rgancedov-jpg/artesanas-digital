@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Administración - PDF Masivo</title>
+    
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, query, getDocs, orderBy, startAfter, limit, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        
+        // =================================================================================
+        // CONFIGURACIÓN DE FIREBASE
+        // =================================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
+            authDomain: "artesanas-panama-digital.firebaseapp.com", 
+            projectId: "artesanas-panama-digital", 
+            storageBucket: "artesanas-panama-digital.firebasestorage.app", 
+            messagingSenderId: "216158084302", 
+            appId: "1:216158084302:web:e3c38b4a1a7234c7a8449f", 
+            measurementId: "G-SQPMWH7G50" 
+        };
+        // =================================================================================
+        
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const perfilesRef = collection(db, "perfiles");
+        
+        // Estado global para la navegación, edición y exportación
+        let lastVisible = null;
+        let currentPage = 0;
+        const PAGE_SIZE = 10;
+        let allRecords = []; 
+        let currentDisplayData = []; 
+        let currentRecordIndex = -1; 
+        let selectedDocId = null; 
+        let currentRecordData = {}; 
+        
+        // Elementos del DOM
+        const tableBody = document.getElementById('tableBody');
+        const detailPanel = document.getElementById('detailPanel');
+        const searchInput = document.getElementById('searchInput');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        const navPrevBtn = document.getElementById('navPrev');
+        const navNextBtn = document.getElementById('navNext');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const editButtons = document.getElementById('editButtons'); 
+        const cancelButton = document.getElementById('cancelButton'); 
+        const saveButton = document.getElementById('saveButton');
+        
+        // ======================== FUNCIONES DE UTILIDAD PARA LA BÚSQUEDA ========================
+        function normalizePhone(phone) {
+            if (!phone) return '';
+            return phone.replace(/\D/g, ''); 
+        }
+        function cleanString(str) {
+            if (!str) return '';
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+        // ======================== FUNCIONES DE EDICIÓN Y GUARDADO ========================
+        function toggleEditMode(isEditing) {
+            document.querySelectorAll('.view-display').forEach(el => el.classList.toggle('hidden', isEditing));
+            document.querySelectorAll('.edit-input').forEach(el => el.classList.toggle('hidden', !isEditing));
+            document.getElementById('viewButtonsContainer').classList.toggle('hidden', isEditing);
+            editButtons.classList.toggle('hidden', !isEditing);
+            navPrevBtn.disabled = isEditing;
+            navNextBtn.disabled = isEditing;
+        }
+        window.guardarModificacion = async function() {
+            if (!selectedDocId) {
+                alert("No hay un perfil seleccionado para guardar.");
+                return;
+            }
+            if (!confirm("¿Está seguro de guardar los cambios?")) {
+                return;
+            }
+            loadingIndicator.classList.remove('hidden');
+            try {
+                const newNombre = document.getElementById('editArtesana').value.trim();
+                const newEmprendimiento = document.getElementById('editEmprendimiento').value.trim();
+                
+                const updatedData = {
+                    nombre: newNombre,
+                    nombreEmprendimiento: newEmprendimiento,
+                    telefono: document.getElementById('editTelefono').value.trim(),
+                    ubicacion: document.getElementById('editUbicacion').value.trim(),
+                    instagram: document.getElementById('editInstagram').value.trim(),
+                    descripcion: document.getElementById('editDescripcion').value.trim(),
+                    updatedAt: new Date().toISOString(),
+                    nombre_lower: newNombre.toLowerCase(),
+                    nombreEmprendimiento_lower: newEmprendimiento.toLowerCase(),
+                };
+                const docRef = doc(perfilesRef, selectedDocId);
+                await updateDoc(docRef, updatedData);
+                alert("✅ ¡Modificación guardada exitosamente!");
+                const docSnap = await getDoc(docRef);
+                selectRecord(selectedDocId, docSnap.data()); 
+                toggleEditMode(false);
+                loadRecords('initial'); 
+            } catch (error) {
+                console.error("Error al guardar la modificación:", error);
+                alert(`❌ Ocurrió un error al guardar: ${error.message}`);
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        };
+        
+        // ======================== FUNCIONES DE NAVEGACIÓN Y CARGA ========================
+        window.loadRecords = async function (direction = 'initial') {
+            loadingIndicator.classList.remove('hidden');
+            let q;
+            try {
+                if (direction === 'next' && lastVisible) {
+                    q = query(perfilesRef, orderBy("nombre"), startAfter(lastVisible), limit(PAGE_SIZE));
+                } else {
+                    q = query(perfilesRef, orderBy("nombre"), limit(PAGE_SIZE));
+                }
+                
+                const documentSnapshots = await getDocs(q);
+                if (documentSnapshots.empty && direction !== 'initial') {
+                    alert("No hay más registros para mostrar.");
+                    loadingIndicator.classList.add('hidden');
+                    return;
+                }
+                tableBody.innerHTML = '';
+                allRecords = [];
+                currentDisplayData = [];
+                
+                documentSnapshots.forEach(doc => {
+                    const data = doc.data();
+                    data.docId = doc.id;
+                    allRecords.push(doc.id);
+                    currentDisplayData.push(data); 
+                    
+                    const row = tableBody.insertRow();
+                    row.className = 'cursor-pointer hover:bg-violet-50 transition-colors';
+                    row.onclick = () => { selectRecord(doc.id, doc.data()); toggleEditMode(false); };
+                    
+                    // ORDEN DE COLUMNAS: Artesana, Emprendimiento, Teléfono, Ubicación
+                    row.insertCell().textContent = data.nombre || 'N/A';                    
+                    row.insertCell().textContent = data.nombreEmprendimiento || 'Sin Nombre'; 
+                    row.insertCell().textContent = data.telefono || 'N/A';                     
+                    row.insertCell().textContent = data.ubicacion || 'N/A';                    
+                    
+                    const actionsCell = row.insertCell();
+                    actionsCell.className = 'whitespace-nowrap';
+                    
+                    const modifyBtn = document.createElement('button');
+                    modifyBtn.textContent = '✏️ Modificar';
+                    modifyBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs transition-colors';
+                    modifyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        selectRecord(doc.id, doc.data());
+                        toggleEditMode(true);
+                    };
+                    actionsCell.appendChild(modifyBtn);
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = '🗑️ Borrar';
+                    deleteBtn.className = 'bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs ml-2 transition-colors';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        borrarRegistro(doc.id);
+                    };
+                    actionsCell.appendChild(deleteBtn);
+                });
+                
+                if (!documentSnapshots.empty) {
+                    lastVisible = documentSnapshots.docs[documentSnapshots.docs.length - 1];
+                    if (direction === 'next') currentPage++;
+                    if (direction === 'prev' && currentPage > 0) currentPage--;
+                    if (direction === 'initial') currentPage = 0;
+                }
+                document.getElementById('pageStatus').textContent = `Página ${currentPage + 1}`;
+                prevPageBtn.disabled = currentPage === 0;
+                nextPageBtn.disabled = documentSnapshots.empty || documentSnapshots.size < PAGE_SIZE;
+            } catch (error) {
+                console.error("Error cargando registros:", error);
+                alert("Ocurrió un error al cargar la lista de perfiles.");
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        };
+        
+        window.searchRecords = async function () {
+            const searchTerm = searchInput.value.trim();
+            if (!searchTerm) {
+                loadRecords('initial'); 
+                return;
+            }
+            loadingIndicator.classList.remove('hidden');
+            try {
+                const cleanSearch = cleanString(searchTerm); 
+                const phoneSearchDigits = normalizePhone(searchTerm); 
+                
+                let q = query(perfilesRef, orderBy("nombre")); 
+                const querySnapshot = await getDocs(q);
+                tableBody.innerHTML = '';
+                allRecords = [];
+                currentDisplayData = []; 
+                let matches = [];
+                
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    
+                    const cleanNombre = cleanString(data.nombre);
+                    const cleanEmprendimiento = cleanString(data.nombreEmprendimiento);
+                    const normalizedTelefono = normalizePhone(data.telefono); 
+                    
+                    let match = false;
+                    
+                    if (cleanNombre.includes(cleanSearch) || cleanEmprendimiento.includes(cleanSearch)) {
+                        match = true;
+                    }
+                    if (!match && phoneSearchDigits.length > 0) { 
+                        if (normalizedTelefono.includes(phoneSearchDigits)) {
+                            match = true;
+                        }
+                    }
+                    if (match) {
+                        data.docId = doc.id;
+                        matches.push(data);
+                        allRecords.push(doc.id); 
+                    }
+                });
+                
+                if (matches.length === 0) {
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = `No se encontraron resultados para "${searchTerm}".`;
+                    row.cells[0].colSpan = 5; 
+                    row.cells[0].className = 'text-center py-4';
+                } else {
+                    matches.forEach(data => {
+                        currentDisplayData.push(data); 
+                        const row = tableBody.insertRow();
+                        row.className = 'cursor-pointer hover:bg-violet-50 transition-colors';
+                        row.onclick = () => { selectRecord(data.docId, data); toggleEditMode(false); };
+                        
+                        row.insertCell().textContent = data.nombre || 'N/A';                       
+                        row.insertCell().textContent = data.nombreEmprendimiento || 'Sin Nombre';  
+                        row.insertCell().textContent = data.telefono || 'N/A';                     
+                        row.insertCell().textContent = data.ubicacion || 'N/A';                    
+                        
+                        const actionsCell = row.insertCell();
+                        actionsCell.className = 'whitespace-nowrap';
+                        
+                        const modifyBtn = document.createElement('button');
+                        modifyBtn.textContent = '✏️ Modificar';
+                        modifyBtn.className = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs transition-colors';
+                        modifyBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            selectRecord(data.docId, data);
+                            toggleEditMode(true);
+                        };
+                        actionsCell.appendChild(modifyBtn);
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = '🗑️ Borrar';
+                        deleteBtn.className = 'bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs ml-2 transition-colors';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            borrarRegistro(data.docId);
+                        };
+                        actionsCell.appendChild(deleteBtn);
+                    });
+                }
+                
+                document.getElementById('pageStatus').textContent = `Resultados (${matches.length})`;
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+            } catch (error) {
+                console.error("Error en la búsqueda:", error);
+                alert("Ocurrió un error al realizar la búsqueda.");
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        };
+        
+        function selectRecord(docId, data) {
+            selectedDocId = docId; 
+            currentRecordData = data; 
+            currentRecordIndex = allRecords.findIndex(id => id === docId);
+            
+            document.getElementById('displayEmprendimiento').textContent = data.nombreEmprendimiento || 'Sin Nombre';
+            document.getElementById('editEmprendimiento').value = data.nombreEmprendimiento || '';
+            document.getElementById('displayArtesana').textContent = data.nombre || 'N/A';
+            document.getElementById('editArtesana').value = data.nombre || '';
+            document.getElementById('displayTelefono').textContent = data.telefono || 'N/A';
+            document.getElementById('editTelefono').value = data.telefono || '';
+            document.getElementById('displayUbicacion').textContent = data.ubicacion || 'N/A';
+            document.getElementById('editUbicacion').value = data.ubicacion || '';
+            document.getElementById('displayInstagram').textContent = data.instagram || 'N/A';
+            document.getElementById('editInstagram').value = data.instagram || '';
+            document.getElementById('displayDescripcion').textContent = data.descripcion || 'Sin descripción';
+            document.getElementById('editDescripcion').value = data.descripcion || '';
+            document.getElementById('detailCreatedAt').textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'N/A';
+            
+            document.getElementById('detailLogo').innerHTML = data.logoURL ? `<p class="text-xs text-gray-500 truncate">Logo URL: <a href="${data.logoURL}" target="_blank" class="text-blue-500 hover:underline">${data.logoURL.substring(0, 30)}...</a></p>` : 'Sin Logo Subido';
+            
+            const prod1 = data.productos?.[0];
+            const prod2 = data.productos?.[1];
+            
+            document.getElementById('detailProd1').innerHTML = `
+                <p><strong>Desc:</strong> ${prod1?.descripcion || 'N/A'}</p>
+                <p class="text-xs text-gray-500 truncate">URL: ${prod1?.url ? `<a href="${prod1.url}" target="_blank" class="text-blue-500 hover:underline">${prod1.url.substring(0, 30)}...</a></p>` : 'N/A'}</p>
+            `;
+            document.getElementById('detailProd2').innerHTML = `
+                <p><strong>Desc:</strong> ${prod2?.descripcion || 'N/A'}</p>
+                <p class="text-xs text-gray-500 truncate">URL: ${prod2?.url ? `<a href="${prod2.url}" target="_blank" class="text-blue-500 hover:underline">${prod2.url.substring(0, 30)}...</a></p>` : 'N/A'}</p>
+            `;
+            
+            detailPanel.classList.remove('hidden');
+            updateNavigationButtons();
+        }
+        function updateNavigationButtons() {
+            navPrevBtn.disabled = currentRecordIndex <= 0;
+            navNextBtn.disabled = currentRecordIndex >= allRecords.length - 1;
+        }
+        
+        window.navigateRecord = async function (offset) {
+            if (editButtons.classList.contains('hidden') === false) {
+                alert("Por favor, guarde o cancele la edición actual antes de navegar.");
+                return;
+            }
+            const newIndex = currentRecordIndex + offset; 
+            
+            if (newIndex >= 0 && newIndex < allRecords.length) {
+                const docId = allRecords[newIndex];
+                const docSnap = await getDoc(doc(perfilesRef, docId));
+                if (docSnap.exists()) {
+                    selectRecord(docId, docSnap.data());
+                    toggleEditMode(false);
+                } else {
+                    alert('Error: El registro no existe.');
+                    loadRecords('initial');
+                }
+            }
+        }
+        
+        async function borrarRegistro(docId) {
+            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE el registro? Esta acción es irreversible.`)) {
+                return;
+            }
+            try {
+                await deleteDoc(doc(perfilesRef, docId));
+                alert(`✅ El registro ha sido borrado exitosamente.`); 
+                loadRecords('initial');
+                detailPanel.classList.add('hidden');
+            } catch (error) {
+                console.error("Error al borrar el registro:", error);
+                alert(`❌ Ocurrió un error al intentar borrar el registro: ${error.message}`);
+            }
+        }
+        
+        // ======================== FUNCIÓN DE EXPORTACIÓN XLSX ========================
+        
+        window.exportToXLSX = async function() {
+            const btn = document.getElementById('exportButton');
+            btn.disabled = true;
+            btn.textContent = 'Generando Exportación...';
+            
+            try {
+                // 1. OBTENER TODOS LOS REGISTROS DE LA BASE DE DATOS
+                const profilesRef = collection(db, "perfiles");
+                const q = query(profilesRef, orderBy("nombre", "asc")); 
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    alert("No hay registros en la base de datos para exportar.");
+                    return;
+                }
+                
+                const allRecordsToExport = querySnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+                
+                const dataForSheet = [];
+                
+                const headers = [
+                    "Artesana_Nombre", "Emprendimiento_Nombre", 
+                    "Telefono", "Ubicacion", "Instagram", "Descripcion", 
+                    "Producto1_Desc", "Producto2_Desc",
+                    "Fecha_Creacion"
+                ];
+                dataForSheet.push(headers);
+            
+                allRecordsToExport.forEach(data => {
+                    const prod1 = data.productos?.[0];
+                    const prod2 = data.productos?.[1];
+            
+                    const row = [
+                        data.nombre || '',
+                        data.nombreEmprendimiento || '',
+                        data.telefono || '',
+                        data.ubicacion || '',
+                        data.instagram || '',
+                        data.descripcion || '',
+                        prod1?.descripcion || '', // Producto1_Desc
+                        prod2?.descripcion || '', // Producto2_Desc
+                        data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'N/A'
+                    ];
+                    dataForSheet.push(row);
+                });
+            
+                const ws = XLSX.utils.aoa_to_sheet(dataForSheet); 
+                const wb = XLSX.utils.book_new();
+                // Nombre de la hoja de cálculo
+                XLSX.utils.book_append_sheet(wb, ws, "Registro_Emprendedoras");
+            
+                // Nombre de archivo
+                const filename = `Registro_Perfiles_Artesanas_MIDEM_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                XLSX.writeFile(wb, filename);
+            
+                alert(`Exportación exitosa. Se descargaron ${allRecordsToExport.length} registros en formato XLSX.`);
+            } catch (error) {
+                console.error("Error al generar la exportación XLSX:", error);
+                alert("❌ Ocurrió un error al generar la exportación.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📊 Exportar a XLSX';
+            }
+        };
+        
+        // ======================== LÓGICA DE PDF MASIVO (INTEGRACIÓN) ========================
+        
+        const { jsPDF } = window.jspdf;
+
+        /**
+         * Obtiene la Data URL (base64) de la imagen desde una URL remota (Cloudinary).
+         */
+        async function getImageSourceForPDF(file, url) {
+            if (url) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error("Fallo al cargar la imagen de Cloudinary.");
+                    const blob = await response.blob();
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Error cargando imagen de URL para PDF:", error);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Genera el contenido de un ÚNICO perfil en la página actual del PDF.
+         */
+        async function generarPDFPerfil(doc, data) {
+            const defaultLogoPdfUrl = document.getElementById("defaultLogo").src;
+
+            // --- DATOS DEL PERFIL ---
+            const nombre = data.nombre || "N/A";
+            const telefono = data.telefono || "N/A";
+            const ubicacion = data.ubicacion || "N/A";
+            const nombreEmprendimiento = data.nombreEmprendimiento || "N/A";
+            const descripcion = data.descripcion || "Sin descripción";
+            const instagramUser = data.instagram ? data.instagram.replace('@', '') : "N/A";
+            const instagramUrl = data.instagram ? `https://instagram.com/${instagramUser}` : "N/A";
+            
+            // --- URLs DE CLOUDINARY ---
+            const logoURL = data.logoURL || null;
+            const producto1URL = data.productos?.[0]?.url || null;
+            const producto2URL = data.productos?.[1]?.url || null;
+            const descProducto1 = data.productos?.[0]?.descripcion || "Producto 1";
+            const descProducto2 = data.productos?.[1]?.descripcion || "Producto 2";
+
+            // --- GENERACIÓN DEL QR ---
+            const datosQR = `Nombre: ${nombre}\nTeléfono: ${telefono}\nUbicación: ${ubicacion}\nEmprendimiento: ${nombreEmprendimiento}\nInstagram: @${instagramUser}`;
+            let qrImg = defaultLogoPdfUrl; 
+            
+            try {
+                const canvas = document.createElement('canvas');
+                await new Promise((resolve, reject) => {
+                    // AJUSTE DE RESOLUCIÓN QR: Aumentado a 200
+                    QRCode.toCanvas(canvas, datosQR, { width: 200 }, function (error) { 
+                        if (error) reject("Error QR");
+                        else resolve();
+                    });
+                });
+                qrImg = canvas.toDataURL("image/png");
+            } catch (e) {
+                console.warn(`No se pudo generar el QR para ${nombreEmprendimiento}.`);
+            }
+
+            // --- DISEÑO DEL PDF (A4) ---
+            doc.setTextColor(0, 0, 0); // Texto negro por defecto
+            let currentY = 15;
+
+            // 1. ENCABEZADO Y LOGO MIDEM
+            if (defaultLogoPdfUrl) {
+                doc.addImage(defaultLogoPdfUrl, "PNG", 20, currentY, 30, 30);
+            }
+
+            // Títulos principales en violeta
+            doc.setTextColor(74, 20, 140);
+            doc.setFontSize(20); 
+            doc.setFont('helvetica', 'bold');
+            doc.text("Ministerio de la Mujer", 60, 20);
+            
+            doc.setFontSize(14); 
+            doc.text("Perfil Digital: Artesana y Emprendedora", 60, 28);
+            
+            // Nombre del Emprendimiento (Con etiqueta y bajado a Y=60)
+            doc.setFontSize(14); 
+            doc.setFont('helvetica', 'bold');
+            doc.text("Nombre del Emprendimiento:", 20, 60); // Etiqueta
+            
+            doc.setFont('helvetica', 'normal');
+            const splitEmprendimiento = doc.splitTextToSize(nombreEmprendimiento, 100); 
+            doc.text(splitEmprendimiento, 90, 60); 
+            
+            doc.setTextColor(0, 0, 0); // Volver a texto negro para el resto del contenido
+
+            // Calcular la Y de inicio para la siguiente sección (Logo/QR)
+            const currentEmprendimientoHeight = splitEmprendimiento.length * 5; 
+            let yOffset = 60 + currentEmprendimientoHeight + 5; 
+
+            // 2. LOGO DEL EMPRENDIMIENTO (Izquierda)
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12); // Volver a tamaño estándar para el resto
+            doc.text("Logo del Emprendimiento", 20, yOffset); 
+            
+            if (logoURL) {
+                const logoSource = await getImageSourceForPDF(null, logoURL);
+                if (logoSource) {
+                    const logoX = 20;
+                    const logoY = yOffset + 5; 
+                    const logoSize = 40;
+
+                    // Dibujar un rectángulo alrededor del logo
+                    doc.setDrawColor(74, 20, 140); 
+                    doc.setLineWidth(0.5);
+                    doc.rect(logoX - 1, logoY - 1, logoSize + 2, logoSize + 2); 
+
+                    doc.addImage(logoSource, "JPEG", logoX, logoY, logoSize, logoSize); 
+                }
+            }
+            
+            // 3. QR (Derecha)
+            doc.addImage(qrImg, "PNG", 140, yOffset, 45, 45); 
+            doc.setFontSize(8);
+            doc.text("Escanea para ver el perfil completo", 140, yOffset + 48); 
+            
+            // 4. DATOS CLAVE (Nombre, Teléfono, Ubicación)
+            yOffset += 60; // Posición de inicio para datos clave (debajo del logo/QR)
+            doc.setFontSize(12);
+            
+            const textY = yOffset; 
+            const dataY = yOffset + 5; 
+            
+            // Títulos: Nombre, Teléfono, Ubicación
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Nombre de la Emprendedora: `, 20, textY);
+            doc.text(`Teléfono: `, 94, textY); 
+            doc.text(`Ubicación: `, 140, textY); 
+            
+            // Datos: Nombre, Teléfono, Ubicación
+            doc.setFont('helvetica', 'normal');
+            
+            const splitNombre = doc.splitTextToSize(nombre, 50); 
+            const splitPhone = doc.splitTextToSize(telefono, 45); 
+            const splitUbicacion = doc.splitTextToSize(ubicacion, 60); 
+
+            doc.text(splitNombre, 20, dataY);
+            doc.text(splitPhone, 94, dataY); 
+            doc.text(splitUbicacion, 140, dataY); 
+            
+            // Calcula el nuevo yOffset basado en la columna más alta (+ espaciado)
+            const maxLines = Math.max(splitNombre.length, splitPhone.length, splitUbicacion.length);
+            yOffset = dataY + (maxLines * 5) + 10; 
+
+            // 5. DESCRIPCIÓN
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Descripción: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            
+            const splitDescription = doc.splitTextToSize(descripcion, 170);
+            doc.text(splitDescription, 20, yOffset + 5);
+            // AJUSTE DE ESPACIADO: Se aumentó a 20 para mover Instagram/Productos una línea más abajo.
+            yOffset += (splitDescription.length * 5) + 20; 
+
+            // 6. INSTAGRAM
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Instagram: `, 20, yOffset);
+            doc.setFont('helvetica', 'normal');
+            doc.textWithLink(`@${instagramUser}`, 20, yOffset + 5, { url: instagramUrl });
+            yOffset += 15;
+            
+            // 7. PRODUCTOS DE MUESTRA
+            if (producto1URL || producto2URL) {
+                doc.setFont('helvetica', 'bold');
+                doc.text("Productos de Muestra", 20, yOffset);
+                doc.setFont('helvetica', 'normal');
+
+                const boxX = 18;
+                const boxY = yOffset + 3;
+                doc.setDrawColor(74, 20, 140); 
+                doc.setLineWidth(0.5);
+                doc.rect(boxX, boxY, 175, 75); 
+                yOffset += 10;
+                
+                const addProductImage = async (url, description, xOffset) => {
+                    if (url) {
+                        const imageSource = await getImageSourceForPDF(null, url);
+
+                        if (imageSource) {
+                            const imgX = boxX + xOffset;
+                            const imgY = yOffset + 1.5;                         
+                            doc.addImage(imageSource, "JPEG", imgX, imgY, 60, 60); 
+                            
+                            doc.setFontSize(8); 
+                            doc.text(description, imgX + 30, imgY + 65, {align: 'center'}); 
+                        }
+                    }
+                };
+                
+                await addProductImage(producto1URL, descProducto1, 5); 
+                await addProductImage(producto2URL, descProducto2, 95); 
+                
+                yOffset += 85; 
+            }
+        }
+        
+        window.generarPDFMasivo = async function() {
+            const btn = document.getElementById('btnPdfMasivo');
+            btn.disabled = true;
+            btn.textContent = 'Cargando y Generando PDF (Puede tardar)...';
+
+            try {
+                // 1. OBTENER TODOS LOS DATOS
+                const profilesRef = collection(db, "perfiles");
+                const q = query(profilesRef, orderBy("nombreEmprendimiento", "asc"));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    alert("No se encontraron registros para generar el PDF masivo.");
+                    return;
+                }
+
+                const doc = new jsPDF();
+                let firstPage = true;
+
+                // 2. PROCESAR CADA PERFIL
+                for (const docSnap of querySnapshot.docs) {
+                    const data = docSnap.data();
+
+                    if (!firstPage) {
+                        doc.addPage();
+                    }
+                    firstPage = false;
+                    
+                    await generarPDFPerfil(doc, data);
+                }
+
+                // 3. GUARDAR EL ARCHIVO FINAL
+                doc.save(`Perfiles_Artesanas_Masivo_${new Date().toISOString().substring(0, 10)}.pdf`);
+                alert(`✅ PDF Masivo generado exitosamente con ${querySnapshot.size} perfiles.`);
+
+            } catch (error) {
+                console.error("Error al generar PDF Masivo:", error);
+                alert("❌ Ocurrió un error al generar el PDF Masivo. Revisa la consola (F12).");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Descargar/Imprimir PDF Masivo'; 
+            }
+        }
+        
+        // ======================== INICIALIZACIÓN ========================
+        window.onload = function() {
+            loadRecords('initial');
+            
+            prevPageBtn.onclick = () => loadRecords('prev');
+            nextPageBtn.onclick = () => loadRecords('next');
+            navPrevBtn.onclick = () => navigateRecord(-1);
+            navNextBtn.onclick = () => navigateRecord(1);
+            
+            document.getElementById('searchButton').onclick = searchRecords;
+            document.getElementById('clearSearchButton').onclick = () => {
+                searchInput.value = ''; 
+                loadRecords('initial'); 
+            };
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchRecords();
+                }
+            });
+            
+            saveButton.onclick = guardarModificacion;
+            cancelButton.onclick = () => {
+                selectRecord(selectedDocId, currentRecordData); 
+                toggleEditMode(false);                             
+            };
+        };
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .header {
+            background-color: #4a148c; /* Violeta oscuro */
+            color: white;
+        }
+        .main-container {
+            min-height: calc(100vh - 80px); 
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+        }
+        th {
+            background-color: #fef08a; /* Amarillo/Dorado */
+            color: #4a148c;
+            border-bottom: 2px solid #ddd;
+        }
+        .table-container {
+            overflow-x: auto;
+            min-width: 100%;
+        }
+        .detail-card {
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .detail-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .edit-input {
+            margin-top: 5px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="p-0">
+    <img id="defaultLogo" src="https://raw.githubusercontent.com/rgancedov-jpg/artesanas-digital/main/logo-nuevo-1_midem.png" alt="Logo MIDEM" class="hidden"/>
+    
+    <header class="header p-4 shadow-lg flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-extrabold">🚀 Panel de Gestión (Administración)</h1>
+            <p class="text-sm">Vista de tabla y detalles de Perfiles Digitales.</p>
+        </div>
+    </header>
+    <div class="main-container flex flex-col lg:flex-row p-6 gap-6">
+        <div class="lg:w-2/3 w-full bg-white p-6 rounded-lg shadow-xl">
+            <h2 class="text-xl font-bold text-gray-700 mb-4">Catálogo de Perfiles</h2>
+            
+            <div class="mb-6 border p-4 rounded-lg bg-gray-50">
+                <label for="searchInput" class="font-semibold text-gray-700 mb-2 block">Buscar Perfil (Nombre, Emprendimiento o Teléfono)</label>
+                
+                <div class="flex flex-col gap-3">
+                    <div class="flex gap-3 items-stretch">
+                        <input type="text" id="searchInput" placeholder="Ej: Ana, Artesanías, 6543-2109" class="p-3 border rounded-lg flex-grow" />
+                    </div>
+                    <div class="flex gap-3 flex-wrap">
+                        <button id="searchButton" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
+                            🔍 Buscar
+                        </button>
+                        <button id="clearSearchButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
+                            🔄 Mostrar Todos / Resetear Filtro
+                        </button>
+                        <button id="btnPdfMasivo" onclick="generarPDFMasivo()" 
+                            class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
+                            Descargar/Imprimir PDF Masivo
+                        </button>
+                        
+                        <a href="reporte_bd_emprendedoras.html" target="_blank" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap flex items-center justify-center">
+                            📋 Ver Reporte de Datos (Tabla Completa)
+                        </a>
+                        
+                        <button id="exportButton" onclick="exportToXLSX()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap">
+                            📊 Exportar a XLSX
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-gray-500 mt-2">*Búsqueda **flexible** por nombre de la artesana, nombre del emprendimiento (ignora acentos/mayúsculas) o cualquier secuencia de dígitos del teléfono. La exportación ahora siempre incluirá **todos** los registros de la base de datos.</p>
+            </div>
+            
+            <div class="table-container">
+                <table class="w-full border-collapse rounded-lg overflow-hidden">
+                    <thead>
+                        <tr>
+                            <th>Artesana</th>
+                            <th>Emprendimiento</th>
+                            <th>Teléfono</th>
+                            <th>Ubicación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="5" class="text-center py-4 text-gray-500">Cargando datos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="flex justify-between items-center mt-6">
+                <button id="prevPage" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l-lg" disabled>
+                    Página Anterior
+                </button>
+                <span id="pageStatus" class="text-gray-600 font-medium">Página 1</span>
+                <button id="nextPage" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r-lg" disabled>
+                    Página Siguiente
+                </button>
+            </div>
+            
+            <div id="loadingIndicator" class="hidden text-center mt-4 text-violet-600 font-semibold">
+                Cargando...
+            </div>
+        </div>
+        
+        <div id="detailPanel" class="lg:w-1/3 w-full detail-card p-6 rounded-lg shadow-xl hidden">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-xl font-bold text-violet-800">Detalle del Perfil</h2>
+            </div>
+            
+            <div class="flex justify-between items-center mb-6">
+                <button id="navPrev" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-3 rounded transition-colors text-sm" disabled>
+                    &larr; Anterior
+                </button>
+                
+                <div id="viewButtonsContainer">
+                </div>
+                
+                <div id="editButtons" class="flex gap-2 hidden">
+                    <button id="saveButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded transition-colors text-sm">
+                        💾 Guardar Cambios
+                    </button>
+                    <button id="cancelButton" class="bg-gray-500 hover:bg-gray-600 text-white py-1 px-3 rounded transition-colors text-sm">
+                        ❌ Cancelar
+                    </button>
+                </div>
+                
+                <button id="navNext" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-3 rounded transition-colors text-sm" disabled>
+                    Siguiente &rarr;
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="detail-item">
+                    <p class="font-semibold text-gray-700">Emprendimiento:</p>
+                    <p id="displayEmprendimiento" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editEmprendimiento" class="edit-input hidden" placeholder="Nombre del Emprendimiento" />
+                </div>
+                <div class="detail-item">
+                    <p class="font-semibold text-gray-700">Artesana:</p> 
+                    <p id="displayArtesana" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editArtesana" class="edit-input hidden" placeholder="Nombre de la Artesana" /> 
+                </div>
+                <div class="detail-item">
+                    <p class="font-semibold text-gray-700">Teléfono:</p>
+                    <p id="displayTelefono" class="text-gray-900 view-display"></p>
+                    <input type="tel" id="editTelefono" class="edit-input hidden" placeholder="9999-9999" />
+                </div>
+                <div class="detail-item">
+                    <p class="font-semibold text-gray-700">Ubicación:</p>
+                    <p id="displayUbicacion" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editUbicacion" class="edit-input hidden" placeholder="Provincia, Ciudad" />
+                </div>
+                <div class="detail-item">
+                    <p class="font-semibold text-gray-700">Instagram:</p>
+                    <p id="displayInstagram" class="text-gray-900 view-display"></p>
+                    <input type="text" id="editInstagram" class="edit-input hidden" placeholder="@usuario" />
+                </div>
+                <div class="detail-item">
+                    <p class="font-semibold text-gray-700">Descripción:</p>
+                    <p id="displayDescripcion" class="text-gray-900 text-sm italic view-display"></p>
+                    <textarea id="editDescripcion" class="edit-input hidden" rows="3" placeholder="Descripción breve del emprendimiento"></textarea>
+                </div>
+                <div class="detail-item">
+                    <p class="font-semibold text-gray-700">Creado:</p>
+                    <p id="detailCreatedAt" class="text-gray-500 text-sm"></p>
+                </div>
+                
+                <h3 class="text-md font-bold text-gray-700 pt-3">Archivos Subidos (URLs)</h3>
+                <p class="text-xs text-red-500 font-semibold">La modificación de imágenes solo es posible en el formulario principal (index.html).</p>
+                <div class="detail-item" id="detailLogo">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="detail-item border-none" id="detailProd1">
+                        <p class="font-semibold text-gray-700">Producto 1:</p>
+                    </div>
+                    <div class="detail-item border-none" id="detailProd2">
+                        <p class="font-semibold text-gray-700">Producto 2:</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
