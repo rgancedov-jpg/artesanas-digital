@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Principal - Gestor de Perfiles Digitales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 25px;
+            margin-bottom: 15px;
+            font-size: 1.125rem;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn-form {
+            background-color: #4c51bf; /* Indigo */
+        }
+        .btn-form:hover {
+            background-color: #434190;
+        }
+        .btn-admin {
+            background-color: #6d28d9; /* Violet */
+        }
+        .btn-admin:hover {
+            background-color: #5b21b6;
+        }
+        .btn-report {
+            background-color: #059669; /* Emerald */
+        }
+        .btn-report:hover {
+            background-color: #047857;
+        }
+        .btn-doc {
+            background-color: #d97706; /* Amber */
+        }
+        .btn-doc:hover {
+            background-color: #b45309;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-6 border-b-2 border-yellow-400 pb-3">Menú Principal</h1>
+        <p class="text-gray-600 mb-8">Selecciona una de las áreas de la aplicación.</p>
+
+        <a href="index.html" class="btn btn-form">
+            📝 Formulario Principal (Captura/Edición)
+        </a>
+
+        <a href="administracion.html" class="btn btn-admin">
+            ⚙️ Panel de Administración (Tabla CRUD)
+        </a>
+
+        <a href="reporte_bd_emprendedoras.html" class="btn btn-report" target="_blank">
+            📋 Reporte de Datos (Tabla Completa)
+        </a>
+
+        <a href="documentacion_funcional_v2.html" class="btn btn-doc" target="_blank">
+            📖 Documentación Técnica (v2)
+        </a>
+    </div>
+</body>
+</html>
