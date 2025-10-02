@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación Consolidada - Perfiles Digitales (v2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        h1 {
+            color: #4a148c; /* Violeta Oscuro */
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            border-bottom: 3px solid #fcd34d; /* Dorado */
+            padding-bottom: 0.5rem;
+        }
+        h2 {
+            color: #5b21b6; /* Violeta */
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        h3 {
+            color: #7c3aed; /* Violeta Medio */
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #fef08a; /* Amarillo/Dorado */
+            color: #4a148c;
+            font-weight: 700;
+        }
+        tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding-left: 10px;
+            margin-bottom: 1rem;
+        }
+        .tag {
+            background-color: #e0f2f1;
+            color: #0d9488;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Documentación Consolidada - Perfiles Digitales (v2)</h1>
+        <p class="text-lg font-medium">Esta documentación detalla las funcionalidades de la última versión del formulario principal y el panel de administración.</p>
+
+        <h2>I. Funcionalidades del Formulario Principal (`index.html`)</h2>
+        <p class="font-semibold text-gray-700">🚀 Resumen: Esta versión consolida el formulario como una herramienta completa de gestión y difusión de perfiles (CRUD).</p>
+
+        <h3>1. Botones (CRUD y Utilidades)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Botón</th>
+                    <th>Acción Principal</th>
+                    <th>Detalle y Objetivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Buscar 🔍</td>
+                    <td>Lectura (Read)</td>
+                    <td>Permite cargar el perfil mediante <strong>búsqueda total o parcial</strong> por Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono.</td>
+                </tr>
+                <tr>
+                    <td>Guardar en BD</td>
+                    <td>Creación/Actualización (Create/Update)</td>
+                    <td>Persiste los datos en Firestore y las imágenes en Cloudinary. Activa la generación automática del Código Amigable si el perfil es nuevo.</td>
+                </tr>
+                <tr>
+                    <td>Borrar Registro</td>
+                    <td>Eliminación (Delete)</td>
+                    <td>Borra permanentemente el registro de la base de datos y elimina las imágenes asociadas.</td>
+                </tr>
+                <tr>
+                    <td>Generar QR</td>
+                    <td>Herramienta</td>
+                    <td>Muestra el Código QR interactivo, con opciones para incluir solo el link de Instagram o todos los datos del perfil.</td>
+                </tr>
+                <tr>
+                    <td>Descargar PDF</td>
+                    <td>Herramienta</td>
+                    <td>Genera un PDF listo para imprimir que incluye todos los datos del perfil, las imágenes y el Código QR.</td>
+                </tr>
+                <tr>
+                    <td>Limpiar Filtro 🔄</td>
+                    <td>Herramienta</td>
+                    <td>Restablece el formulario a un estado vacío o limpia completamente los resultados de búsqueda, <strong>ejecutándose instantáneamente sin confirmación</strong>.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. Mejoras Adicionales del Formulario</h3>
+        <ul>
+            <li>Implementación de un algoritmo de **búsqueda flexible** que ignora mayúsculas/minúsculas y acentos, y realiza coincidencia de subcadenas en los campos clave (Nombre, Emprendimiento, Teléfono).</li>
+            <li>Reorganización del formulario para seguir el orden de captura solicitado (Artesana, Emprendimiento, Teléfono, Ubicación, Logo, Descripción, Instagram).</li>
+            <li>Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta, optimizando la visibilidad.</li>
+            <li>Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Cloudinary.</li>
+        </ul>
+
+        <h3>3. 📦 Almacenamiento de imágenes con Cloudinary</h3>
+        <p>El formulario en `index.html` está configurado para que todas las imágenes (logo y productos) se guarden en Cloudinary, no en Firebase Storage.</p>
+        <p class="font-semibold">Configuración necesaria en Cloudinary:</p>
+        <ul>
+            <li><span class="tag">Cloud Name: djvnsgfcl</span></li>
+            <li><span class="tag">Upload Preset: perfil_artesana</span> (debe estar configurado como unsigned).</li>
+        </ul>
+        <p class="font-semibold">Funcionamiento:</p>
+        <ul>
+            <li>Al subir un archivo, la función <span class="tag">uploadFileToCloudinary(file)</span> envía la imagen a Cloudinary.</li>
+            <li>Cloudinary responde con la URL pública segura (<span class="tag">secure_url</span>).</li>
+            <li>Esa URL se guarda en Firestore dentro del documento del perfil.</li>
+        </ul>
+        <p class="mt-4 font-semibold text-green-600">📌 Con esto, la aplicación funciona con Firestore para datos y Cloudinary para imágenes.</p>
+
+        <hr class="my-6 border-t border-gray-300">
+
+        <h2>II. Novedades del Panel de Administración (`administracion.html`)</h2>
+        <p class="font-semibold text-gray-700">El archivo de administración incluye nuevas funcionalidades enfocadas en la gestión de la tabla, edición y reportes masivos.</p>
+
+        <h3>1. Generación de Reportes Masivos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Botón</th>
+                    <th>Acción Principal</th>
+                    <th>Detalle y Objetivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Descargar/Imprimir PDF Masivo</strong></td>
+                    <td>Generación PDF</td>
+                    <td>Genera un archivo PDF de múltiples páginas (una por perfil) con un <strong>diseño optimizado para impresión</strong>. Obtiene <span class="tag">todos los registros</span> de la BD.</td>
+                </tr>
+                <tr>
+                    <td><strong>📊 Exportar a XLSX</strong></td>
+                    <td>Exportación</td>
+                    <td>Exporta todos los campos de todos los registros a una hoja de cálculo. La descarga incluye <span class="tag">toda la base de datos</span>, ignorando cualquier filtro de la tabla.</td>
+                </tr>
+                <tr>
+                    <td><strong>📋 Ver Reporte de Datos (Tabla Completa)</strong></td>
+                    <td>Reporte Web (Nuevo)</td>
+                    <td>Abre una nueva pestaña con <span class="tag">reporte_bd_emprendedoras.html</span>. Muestra la tabla completa en tiempo real, con contenido truncado a 50 caracteres para facilitar la impresión.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>2. Estructura y Estilo del Reporte Web (`reporte_bd_emprendedoras.html`)</h3>
+        <ul>
+            <li><strong>Diseño de Impresión:</strong> Incluye un botón para <span class="tag">window.print()</span> que permite guardar el reporte como PDF o imprimirlo.</li>
+            <li><strong>Optimización de Columnas:</strong> Columnas clave (Ubicación, Descripción, Productos) tienen su contenido **truncado a 50 caracteres** para que la tabla quepa en una impresión horizontal.</li>
+            <li><strong>Carga en Tiempo Real:</strong> El reporte carga los datos directamente de Firebase en tiempo real, asegurando que la tabla mostrada esté siempre actualizada.</li>
+        </ul>
+
+        <h3>3. Ajustes de Diseño y Navegación en `administracion.html`</h3>
+        <ul>
+            <li><strong>Paginación Mejorada:</strong> Uso de paginación real (<span class="tag">limit &amp; startAfter</span>) para manejar grandes bases de datos.</li>
+            <li><strong>Botón Renombrado:</strong> El enlace al reporte web ahora es <strong>"📋 Ver Reporte de Datos (Tabla Completa)"</strong> para ser más explícito.</li>
+            <li><strong>Lógica de Edición:</strong> Al hacer clic en "✏️ Modificar" o activar la edición, los botones de navegación (Anterior/Siguiente) se **desactivan** para evitar la pérdida de cambios.</li>
+            <li><strong>Actualización Post-Guardado:</strong> Después de usar "💾 Guardar Cambios", el panel de detalle recarga el registro actualizado y la tabla principal se refresca automáticamente.</li>
+        </ul>
+    </div>
+</body>
+</html>
