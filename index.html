@@ -5,64 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Perfil Digital - Ministerio de la Mujer</title>
 <!-- 
-Documentación Consolidada - Perfiles Digitales (v2)
-
-Esta documentación detalla las funcionalidades de la última versión del formulario principal y el panel de administración.
-I. Funcionalidades del Formulario Principal (`index.html`)
-
-🚀 Resumen: Esta versión consolida el formulario como una herramienta completa de gestión y difusión de perfiles (CRUD).
-1. Botones (CRUD y Utilidades)
-Botón 	Acción Principal 	Detalle y Objetivo
-Buscar 🔍 	Lectura (Read) 	Permite cargar el perfil mediante búsqueda total o parcial por Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono.
-Guardar en BD 	Creación/Actualización (Create/Update) 	Persiste los datos en Firestore y las imágenes en Cloudinary. Activa la generación automática del Código Amigable si el perfil es nuevo.
-Borrar Registro 	Eliminación (Delete) 	Borra permanentemente el registro de la base de datos y elimina las imágenes asociadas.
-Generar QR 	Herramienta 	Muestra el Código QR interactivo, con opciones para incluir solo el link de Instagram o todos los datos del perfil.
-Descargar PDF 	Herramienta 	Genera un PDF listo para imprimir que incluye todos los datos del perfil, las imágenes y el Código QR.
-Limpiar Filtro 🔄 	Herramienta 	Restablece el formulario a un estado vacío o limpia completamente los resultados de búsqueda, ejecutándose instantáneamente sin confirmación.
-2. Mejoras Adicionales del Formulario
-
-    Implementación de un algoritmo de **búsqueda flexible** que ignora mayúsculas/minúsculas y acentos, y realiza coincidencia de subcadenas en los campos clave (Nombre, Emprendimiento, Teléfono).
-    Reorganización del formulario para seguir el orden de captura solicitado (Artesana, Emprendimiento, Teléfono, Ubicación, Logo, Descripción, Instagram).
-    Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta, optimizando la visibilidad.
-    Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Cloudinary.
-
-3. 📦 Almacenamiento de imágenes con Cloudinary
-
-El formulario en `index.html` está configurado para que todas las imágenes (logo y productos) se guarden en Cloudinary, no en Firebase Storage.
-
+🚀 Resumen de las Nuevas Funcionalidades
+Esta versión consolida el formulario como una herramienta completa de gestión y difusión de perfiles (CRUD), integrando la base de datos (Firebase) y las utilidades de exportación.
+1. Funcionalidad de los Botones (CRUD y Utilidades)
+Los botones permiten ejecutar las funciones principales de la aplicación:
+Botón	Acción Principal	Detalle y Objetivo
+Buscar 🔍	Lectura (Read)	Permite cargar el perfil mediante **búsqueda total o parcial** por Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono, facilitando la visualización o edición.
+Guardar en BD	Creación/Actualización (Create/Update)	Es el botón clave. Persiste los datos en Firestore y las imágenes en Storage. Además, activa la generación automática del Código Amigable si el perfil es nuevo.
+Borrar Registro	Eliminación (Delete)	Borra permanentemente el registro de la base de datos y elimina todas las imágenes (logo y productos) asociadas de Firebase Storage.
+Generar QR	Herramienta	Muestra en pantalla el Código QR interactivo, con opciones para incluir solo el link de Instagram o todos los datos del perfil.
+Descargar PDF	Herramienta	Genera un PDF listo para imprimir que incluye todos los datos del perfil, las imágenes y el Código QR.
+Limpiar Filtro 🔄	Herramienta	Restablece el formulario a un estado vacío para un nuevo registro o limpia completamente los resultados de búsqueda, **ejecutándose instantáneamente sin mensajes de confirmación**.
+2. Otras Mejoras de la Versión
+Implementación de un algoritmo de **búsqueda flexible (total y parcial)** que ignora mayúsculas/minúsculas y acentos, y realiza coincidencia de subcadenas en los campos clave (Nombre, Emprendimiento, Teléfono).
+Reorganización del formulario para seguir el orden de captura solicitado (Artesana, Emprendimiento, Teléfono, Ubicación, Logo, Descripción, Instagram).
+Consolidación del Código: Todo el proyecto (HTML, CSS y la lógica de Firebase) está ahora contenido en un solo archivo para una gestión más sencilla.
+Mejora de Diseño en PDF: El logo del emprendimiento se muestra ahora más grande y en una posición más alta dentro del documento PDF, optimizando la visibilidad.
+Previsualización de Archivos: Las imágenes (logo y productos) se previsualizan instantáneamente después de ser seleccionadas, mejorando la experiencia del usuario antes de subir a Firebase.
+📦 Almacenamiento de imágenes con Cloudinary
+El formulario en index.html está preparado para que todas las imágenes (logo y productos) se guarden en Cloudinary y no en Firebase Storage.
 Configuración necesaria en Cloudinary:
-
-    Cloud Name: djvnsgfcl
-    Upload Preset: perfil_artesana (debe estar configurado como unsigned).
-
+Cloud Name: djvnsgfcl
+Upload Preset: perfil_artesana (debe estar configurado como unsigned).
 Funcionamiento:
-
-    Al subir un archivo, la función uploadFileToCloudinary(file) envía la imagen a Cloudinary.
-    Cloudinary responde con la URL pública segura (secure_url).
-    Esa URL se guarda en Firestore dentro del documento del perfil.
-
-📌 Con esto, la aplicación funciona con Firestore para datos y Cloudinary para imágenes.
-II. Novedades del Panel de Administración (`administracion.html`)
-
-El archivo de administración incluye nuevas funcionalidades enfocadas en la gestión de la tabla, edición y reportes masivos.
-1. Generación de Reportes Masivos
-Botón 	Acción Principal 	Detalle y Objetivo
-Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltiples páginas (una por perfil) con un diseño optimizado para impresión. Obtiene todos los registros de la BD.
-📊 Exportar a XLSX 	Exportación 	Exporta todos los campos de todos los registros a una hoja de cálculo. La descarga incluye toda la base de datos, ignorando cualquier filtro de la tabla.
-📋 Ver Reporte de Datos (Tabla Completa) 	Reporte Web (Nuevo) 	Abre una nueva pestaña con reporte_bd_emprendedoras.html. Muestra la tabla completa en tiempo real, con contenido truncado a 50 caracteres para facilitar la impresión.
-2. Estructura y Estilo del Reporte Web (`reporte_bd_emprendedoras.html`)
-
-    Diseño de Impresión: Incluye un botón para window.print() que permite guardar el reporte como PDF o imprimirlo.
-    Optimización de Columnas: Columnas clave (Ubicación, Descripción, Productos) tienen su contenido **truncado a 50 caracteres** para que la tabla quepa en una impresión horizontal.
-    Carga en Tiempo Real: El reporte carga los datos directamente de Firebase en tiempo real, asegurando que la tabla mostrada esté siempre actualizada.
-
-3. Ajustes de Diseño y Navegación en `administracion.html`
-
-    Paginación Mejorada: Uso de paginación real (limit & startAfter) para manejar grandes bases de datos.
-    Botón Renombrado: El enlace al reporte web ahora es "📋 Ver Reporte de Datos (Tabla Completa)" para ser más explícito.
-    Lógica de Edición: Al hacer clic en "✏️ Modificar" o activar la edición, los botones de navegación (Anterior/Siguiente) se **desactivan** para evitar la pérdida de cambios.
-    Actualización Post-Guardado: Después de usar "💾 Guardar Cambios", el panel de detalle recarga el registro actualizado y la tabla principal se refresca automáticamente.
--->
+Al subir un archivo desde el formulario (logo, producto1, producto2), la función uploadFileToCloudinary(file) envía la imagen a Cloudinary.
+Cloudinary responde con la URL pública segura (secure_url).
+Esa URL se guarda en Firestore dentro del documento del perfil.
+Ventajas de usar Cloudinary:
+No necesitas configurar Firebase Storage.
+Las imágenes se entregan optimizadas y rápidas.
+La base de datos en Firestore guarda únicamente las URLs.
+📌 Con esto, al hacer deploy a Firebase Hosting, tu app ya quedará funcionando con Firestore para datos y Cloudinary para imágenes.
+-->		
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -269,14 +243,14 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
         import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
         
         // =================================================================================
-        // CONFIGURACI脫N DE CLOUDINARY (Tu Cloud Name)
+        // CONFIGURACIÓN DE CLOUDINARY (Tu Cloud Name)
         // =================================================================================
-        const CLOUDINARY_CLOUD_NAME = 'djvnsgfcl'; // 猬咃笍 隆Tu Cloud Name confirmado!
-        const CLOUDINARY_UPLOAD_PRESET = 'perfil_artesana';  // 猬咃笍 Nombre del Preset que debes crear (Unsigned)
+        const CLOUDINARY_CLOUD_NAME = 'djvnsgfcl'; // ⬅️ ¡Tu Cloud Name confirmado!
+        const CLOUDINARY_UPLOAD_PRESET = 'perfil_artesana';  // ⬅️ Nombre del Preset que debes crear (Unsigned)
         // =================================================================================
         
         // =================================================================================
-        // CONFIGURACI脫N DE FIREBASE (Tomada del archivo subido)
+        // CONFIGURACIÓN DE FIREBASE (Tomada del archivo subido)
         // =================================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
@@ -293,12 +267,12 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ======================== FUNCI脫N DE SUBIDA A CLOUDINARY ========================
+        // ======================== FUNCIÓN DE SUBIDA A CLOUDINARY ========================
 
         /**
          * Sube un archivo (imagen) a Cloudinary usando la API REST (Subida No Firmada).
          * @param {File} file El objeto de archivo (imagen) a subir.
-         * @returns {Promise<string>} La URL p煤blica de la imagen subida, o null si falla.
+         * @returns {Promise<string>} La URL pública de la imagen subida, o null si falla.
          */
         async function uploadFileToCloudinary(file) {
             if (!file) return null;
@@ -318,7 +292,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                 if (!response.ok) {
                     const errorData = await response.json();
                     console.error('Error de subida a Cloudinary:', errorData);
-                    alert(`鉂?Cloudinary Error: ${errorData.error.message || response.statusText}. Revisa tu 'Upload Preset' y 'Cloud Name'.`);
+                    alert(`❌ Cloudinary Error: ${errorData.error.message || response.statusText}. Revisa tu 'Upload Preset' y 'Cloud Name'.`);
                     return null;
                 }
         
@@ -329,15 +303,15 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
         
             } catch (error) {
                 console.error('Error al subir la imagen:', error);
-                alert(`鉂?Error al subir la imagen a Cloudinary. Revisa tu conexi贸n.`);
+                alert(`❌ Error al subir la imagen a Cloudinary. Revisa tu conexión.`);
                 return null; 
             }
         }
 
-        // ======================== FUNCIONES AUXILIARES DE B脷SQUEDA Y DISPLAY ========================
+        // ======================== FUNCIONES AUXILIARES DE BÚSQUEDA Y DISPLAY ========================
         
         /**
-         * Normaliza un n煤mero de tel茅fono eliminando todos los caracteres que no sean d铆gitos.
+         * Normaliza un número de teléfono eliminando todos los caracteres que no sean dígitos.
          */
         function normalizePhone(phone) {
             if (!phone) return '';
@@ -345,7 +319,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
         }
 
         /**
-         * Limpia una cadena de texto, eliminando acentos y convirti茅ndola a min煤sculas.
+         * Limpia una cadena de texto, eliminando acentos y convirtiéndola a minúsculas.
          */
         function cleanString(str) {
             if (!str) return '';
@@ -364,7 +338,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             document.getElementById("descProducto1").value = data.productos?.[0]?.descripcion || "";
             document.getElementById("descProducto2").value = data.productos?.[1]?.descripcion || "";
 
-            // 鈿狅笍 NUEVO: Guardar las URLs de la base de datos en campos ocultos para uso en PDF
+            // ⚠️ NUEVO: Guardar las URLs de la base de datos en campos ocultos para uso en PDF
             document.getElementById("logoURL_db").value = data.logoURL || "";
             document.getElementById("producto1URL_db").value = data.productos?.[0]?.url || "";
             document.getElementById("producto2URL_db").value = data.productos?.[1]?.url || "";
@@ -379,7 +353,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
         }
         
         /**
-         * Muestra las previsualizaciones de im谩genes ya guardadas en Firestore (v铆a URL).
+         * Muestra las previsualizaciones de imágenes ya guardadas en Firestore (vía URL).
          */
         function displayRemotePreviews(data) {
             const logoContainer = document.getElementById("logoPreview");
@@ -405,7 +379,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
         }
         
         /**
-         * Funci贸n auxiliar para mostrar im谩genes desde una URL.
+         * Función auxiliar para mostrar imágenes desde una URL.
          */
         function displayImageFromURL(url, description, containerId) {
              const container = document.getElementById(containerId);
@@ -426,7 +400,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
 
         // ======================== FUNCIONES PRINCIPALES DE FIREBASE (CRUD) ========================
 
-        // ** FUNCI脫N CLAVE **: GUARDA O ACTUALIZA EN LA BASE DE DATOS
+        // ** FUNCIÓN CLAVE **: GUARDA O ACTUALIZA EN LA BASE DE DATOS
         window.guardarEnBD = async function () {
             const form = document.getElementById("dataForm");
             if (!form.checkValidity()) {
@@ -440,7 +414,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             const telefono = document.getElementById("telefono").value.trim();
                 
             if (!nombre || !telefono) {
-                alert("ERROR: Debe ingresar el Nombre y Tel茅fono.");
+                alert("ERROR: Debe ingresar el Nombre y Teléfono.");
                 return;
             }
 
@@ -454,10 +428,10 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             
             if (btnGuardar) {
                 btnGuardar.disabled = true;
-                btnGuardar.textContent = docId ? "Subiendo im谩genes y actualizando..." : "Subiendo im谩genes y guardando...";
+                btnGuardar.textContent = docId ? "Subiendo imágenes y actualizando..." : "Subiendo imágenes y guardando...";
             }
 
-            // --- L贸gica de im谩genes (ACTIVA CON CLOUDINARY) ---
+            // --- Lógica de imágenes (ACTIVA CON CLOUDINARY) ---
             const logoFile = document.getElementById("logo").files[0];
             const producto1File = document.getElementById("producto1").files[0];
             const producto2File = document.getElementById("producto2").files[0];
@@ -477,7 +451,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                 producto2URL = existingData.productos?.[1]?.url || null;
             }
             
-            // Subir solo si se seleccion贸 un nuevo archivo, y actualizar la URL
+            // Subir solo si se seleccionó un nuevo archivo, y actualizar la URL
             const uploadPromises = [
                 logoFile ? uploadFileToCloudinary(logoFile) : Promise.resolve(logoURL),
                 producto1File ? uploadFileToCloudinary(producto1File) : Promise.resolve(producto1URL),
@@ -487,16 +461,16 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             // Esperar que todas las subidas/resoluciones terminen
             [logoURL, producto1URL, producto2URL] = await Promise.all(uploadPromises);
 
-            // Si alguna URL de imagen es null (fallo en la subida y no exist铆a antes), lo manejamos.
+            // Si alguna URL de imagen es null (fallo en la subida y no existía antes), lo manejamos.
             if (!logoURL && logoFile || (!producto1URL && producto1File) || (!producto2URL && producto2File)) {
                  if (btnGuardar) {
                      btnGuardar.disabled = false;
                      btnGuardar.textContent = originalText;
                  }
-                 alert("鉂?ERROR CR脥TICO: Una o m谩s subidas de im谩genes a Cloudinary fallaron. Revisa la consola y las credenciales.");
+                 alert("❌ ERROR CRÍTICO: Una o más subidas de imágenes a Cloudinary fallaron. Revisa la consola y las credenciales.");
                  return;
             }
-            // --- Fin L贸gica de im谩genes ---
+            // --- Fin Lógica de imágenes ---
 
             try {
                 const docData = {
@@ -506,7 +480,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                         { url: producto1URL || null, descripcion: document.getElementById("descProducto1").value.trim() || null },
                         { url: producto2URL || null, descripcion: document.getElementById("descProducto2").value.trim() || null }
                     ],
-                    // Campos adicionales para facilitar la b煤squeda por texto (min煤sculas)
+                    // Campos adicionales para facilitar la búsqueda por texto (minúsculas)
                     nombre_lower: nombre.toLowerCase(),
                     nombreEmprendimiento_lower: nombreEmprendimiento.toLowerCase(),
                     updatedAt: new Date().toISOString()
@@ -516,14 +490,14 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                 if (docId) {
                     docRef = doc(db, "perfiles", docId);
                     await updateDoc(docRef, docData);
-                    alert("鉁?Registro actualizado (incluyendo im谩genes si fueron subidas) correctamente.");
+                    alert("✅ Registro actualizado (incluyendo imágenes si fueron subidas) correctamente.");
                 } else {
                     docRef = await addDoc(collection(db, "perfiles"), {
                         ...docData,
                         createdAt: new Date().toISOString()
                     });
                     document.getElementById("docId").value = docRef.id; 
-                    alert("鉁?Datos guardados (incluyendo im谩genes) correctamente.");
+                    alert("✅ Datos guardados (incluyendo imágenes) correctamente.");
                 }
 
                 generarQR();
@@ -535,7 +509,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
 
             } catch (err) {
                 console.error("Error guardando en Firebase:", err);
-                alert("鉂?Ocurri贸 un error al guardar en Firebase. Revisa la consola (F12).");
+                alert("❌ Ocurrió un error al guardar en Firebase. Revisa la consola (F12).");
             } finally {
                 if (btnGuardar) {
                     btnGuardar.disabled = false;
@@ -544,12 +518,12 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             }
         };
 
-        // ** FUNCI脫N DE B脷SQUEDA (ACTUALIZADA con l贸gica flexible) **
+        // ** FUNCIÓN DE BÚSQUEDA (ACTUALIZADA con lógica flexible) **
         window.buscarPorTexto = async function () {
             const textoBusqueda = document.getElementById("busquedaTexto").value.trim();
             
             if (!textoBusqueda) {
-                alert("Por favor, ingrese el Nombre de la Emprendedora, Nombre del Emprendimiento o Tel茅fono para buscar.");
+                alert("Por favor, ingrese el Nombre de la Emprendedora, Nombre del Emprendimiento o Teléfono para buscar.");
                 return;
             }
             
@@ -561,8 +535,8 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             try {
                 const profilesRef = collection(db, "perfiles");
                 
-                // 1. Preparamos los t茅rminos de b煤squeda:
-                const cleanSearch = cleanString(textoBusqueda); // "Mar铆a Artesana" -> "maria artesana"
+                // 1. Preparamos los términos de búsqueda:
+                const cleanSearch = cleanString(textoBusqueda); // "María Artesana" -> "maria artesana"
                 const phoneSearchDigits = normalizePhone(textoBusqueda); // "Maria 654" -> "654"
                 
                 let querySnapshot = await getDocs(profilesRef);
@@ -570,14 +544,14 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                 let docSnap = null;
                 const docs = querySnapshot.docs;
 
-                // B煤squeda en el cliente: flexible con acentos y subcadenas
+                // Búsqueda en el cliente: flexible con acentos y subcadenas
                 for (const doc of docs) {
                     const data = doc.data();
                     
-                    // Limpiamos los datos del documento para la comparaci贸n:
+                    // Limpiamos los datos del documento para la comparación:
                     const cleanNombre = cleanString(data.nombre);
                     const cleanEmprendimiento = cleanString(data.nombreEmprendimiento);
-                    const normalizedTelefono = normalizePhone(data.telefono); // Siempre normalizado a d铆gitos
+                    const normalizedTelefono = normalizePhone(data.telefono); // Siempre normalizado a dígitos
 
                     // CRITERIO DE MATCH:
                     let match = false;
@@ -587,7 +561,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                         match = true;
                     }
 
-                    // Criterio B: Coincidencia parcial de d铆gitos en Tel茅fono (solo se eval煤a si el t茅rmino tiene d铆gitos)
+                    // Criterio B: Coincidencia parcial de dígitos en Teléfono (solo se evalúa si el término tiene dígitos)
                     if (!match && phoneSearchDigits.length > 0) { 
                         if (normalizedTelefono.includes(phoneSearchDigits)) {
                             match = true;
@@ -601,7 +575,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                 }
 
                 if (!docSnap) {
-                    alert(`鉂?No se encontr贸 ning煤n perfil que coincida con: ${textoBusqueda}. Puede crear uno nuevo.`);
+                    alert(`❌ No se encontró ningún perfil que coincida con: ${textoBusqueda}. Puede crear uno nuevo.`);
                     document.getElementById("docId").value = ""; 
                     document.getElementById("dataForm").reset(); 
                     document.getElementById("busquedaTexto").value = textoBusqueda;
@@ -621,7 +595,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
 
             } catch (error) {
                 console.error("Error al buscar el documento:", error);
-                alert("鉂?Ocurri贸 un error al intentar la b煤squeda.");
+                alert("❌ Ocurrió un error al intentar la búsqueda.");
             } finally {
                 btnBuscar.disabled = false;
                 btnBuscar.textContent = originalText;
@@ -632,12 +606,12 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             const docId = document.getElementById("docId").value.trim();
 
             if (!docId) {
-                alert("鉂?Error: No se ha cargado ning煤n perfil para borrar. Use el bot贸n 'Buscar' primero.");
+                alert("❌ Error: No se ha cargado ningún perfil para borrar. Use el botón 'Buscar' primero.");
                 return;
             }
 
-            // MENSAJE DE CONFIRMACI脫N SIMPLE (SIN ID)
-            if (!confirm(`鈿狅笍 驴Est谩 seguro que desea BORRAR PERMANENTEMENTE este registro? Esta acci贸n es irreversible.`)) {
+            // MENSAJE DE CONFIRMACIÓN SIMPLE (SIN ID)
+            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE este registro? Esta acción es irreversible.`)) {
                 return;
             }
 
@@ -655,17 +629,17 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
 
                     document.getElementById("dataForm").reset();
                     document.getElementById("docId").value = "";
-                    // MENSAJE DE 脡XITO SIMPLE (SIN ID)
-                    alert(`鉁?El registro ha sido borrado exitosamente.`);
+                    // MENSAJE DE ÉXITO SIMPLE (SIN ID)
+                    alert(`✅ El registro ha sido borrado exitosamente.`);
                 } else {
-                    alert("鉂?Error: El documento no existe en Firestore, pero el formulario se ha limpiado.");
+                    alert("❌ Error: El documento no existe en Firestore, pero el formulario se ha limpiado.");
                     document.getElementById("dataForm").reset();
                     document.getElementById("docId").value = "";
                 }
 
             } catch (error) {
                 console.error("Error al borrar el registro:", error);
-                alert(`鉂?Ocurri贸 un error al intentar borrar el registro: ${error.message}`);
+                alert(`❌ Ocurrió un error al intentar borrar el registro: ${error.message}`);
             } finally {
                 btnBorrar.disabled = false;
                 btnBorrar.textContent = originalText;
@@ -685,12 +659,12 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             document.getElementById("producto2URL_db").value = "";
         }
         
-        // ** FUNCI脫N PARA LIMPIAR EL FILTRO DE B脷SQUEDA Y EL FORMULARIO **
+        // ** FUNCIÓN PARA LIMPIAR EL FILTRO DE BÚSQUEDA Y EL FORMULARIO **
         window.resetSearchFilter = function() {
-            window.limpiarFormularioParaNuevoRegistro(); // Utiliza la funci贸n existente para limpiar todo
+            window.limpiarFormularioParaNuevoRegistro(); // Utiliza la función existente para limpiar todo
         }
 
-        // ======================== L脫GICA DE QR Y PDF ========================
+        // ======================== LÓGICA DE QR Y PDF ========================
         const { jsPDF } = window.jspdf;
         
         /**
@@ -709,7 +683,7 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
                     reader.readAsDataURL(file);
                 });
             } else if (url) {
-                // Prioridad 2: Si no hay archivo local pero s铆 hay URL remota, descargarla.
+                // Prioridad 2: Si no hay archivo local pero sí hay URL remota, descargarla.
                 try {
                     const response = await fetch(url);
                     if (!response.ok) throw new Error("Fallo al cargar la imagen de Cloudinary.");
@@ -752,10 +726,10 @@ Descargar/Imprimir PDF Masivo 	Generación PDF 	Genera un archivo PDF de múltip
             } else {
                 return `
 Nombre: ${nombre}
-Tel茅fono: ${telefono}
-Ubicaci贸n: ${ubicacion}
+Teléfono: ${telefono}
+Ubicación: ${ubicacion}
 Emprendimiento: ${nombreEmprendimiento}
-Descripci贸n: ${descripcion}
+Descripción: ${descripcion}
 Instagram: ${instagramUser}
 Link: ${instagramUrl}
                 `;
@@ -774,7 +748,7 @@ Link: ${instagramUrl}
                 if (error) {
                     qrMensaje.textContent = "Error al generar el QR.";
                 } else {
-                    qrMensaje.textContent = "QR generado correctamente 鉁?;
+                    qrMensaje.textContent = "QR generado correctamente ✅";
                     qrCanvas.style.display = 'block';
                 }
             });
@@ -795,7 +769,7 @@ Link: ${instagramUrl}
                         else resolve();
                     });
                 });
-                qrMensaje.textContent = "QR para PDF generado correctamente 鉁?;
+                qrMensaje.textContent = "QR para PDF generado correctamente ✅";
             } catch (error) {
                 alert(error);
                 return;
@@ -824,7 +798,7 @@ Link: ${instagramUrl}
             const qrImg = qrCanvas.toDataURL("image/png");
             const defaultLogoPdfUrl = document.getElementById("defaultLogo").src;
 
-            // 3. Dise帽o del PDF (A4)
+            // 3. Diseño del PDF (A4)
             if (defaultLogoPdfUrl) {
                 doc.addImage(defaultLogoPdfUrl, "PNG", 20, 15, 30, 30);
             }
@@ -833,7 +807,7 @@ Link: ${instagramUrl}
             doc.setFont('helvetica', 'bold');
             doc.text("Ministerio de la Mujer", 60, 20);
             doc.setFontSize(12);
-            doc.text("Impulsando a artesanas y emprendedoras hacia la transformaci贸n digital", 60, 28);
+            doc.text("Impulsando a artesanas y emprendedoras hacia la transformación digital", 60, 28);
             doc.setFontSize(14);
             doc.text("Perfil Digital - Artesanas y Emprendedoras", 60, 40);
             
@@ -853,8 +827,8 @@ Link: ${instagramUrl}
             };
 
             addText(`Nombre de la Emprendedora: `, nombre);
-            addText(`Tel茅fono: `, telefono);
-            addText(`Ubicaci贸n: `, ubicacion);
+            addText(`Teléfono: `, telefono);
+            addText(`Ubicación: `, ubicacion);
             yOffset += 5; // Espacio extra
 
             doc.setFont('helvetica', 'bold');
@@ -863,7 +837,7 @@ Link: ${instagramUrl}
             doc.text(`${nombreEmprendimiento}`, 20, yOffset + 5);
             yOffset += 20;
 
-            // 4. L贸gica del Logo (Modificada para usar URL de DB)
+            // 4. Lógica del Logo (Modificada para usar URL de DB)
             async function addLogo() {
                 // Obtener la Data URL de la imagen (usa local file o URL de BD)
                 const logoSource = await getImageSourceForPDF(logoInput.files[0], logoURL_db);
@@ -888,7 +862,7 @@ Link: ${instagramUrl}
 
             function addMainText() {
                 doc.setFont('helvetica', 'bold');
-                doc.text(`Descripci贸n: `, 20, yOffset);
+                doc.text(`Descripción: `, 20, yOffset);
                 doc.setFont('helvetica', 'normal');
                 
                 const splitDescription = doc.splitTextToSize(descripcion, 170);
@@ -910,7 +884,7 @@ Link: ${instagramUrl}
                 yOffset += 15;
             }
 
-            // 5. L贸gica de Productos (Modificada para usar URL de DB)
+            // 5. Lógica de Productos (Modificada para usar URL de DB)
             async function addProducts() {
                 doc.setFont('helvetica', 'bold');
                 doc.text("Productos de Muestra", 20, yOffset);
@@ -924,7 +898,7 @@ Link: ${instagramUrl}
                 doc.rect(boxX, boxY, boxWidth, boxHeight); 
                 yOffset += 10;
                 
-                // Funci贸n auxiliar para agregar producto
+                // Función auxiliar para agregar producto
                 const addProductImage = async (fileInput, url_db, description, xOffset) => {
                     const imageSource = await getImageSourceForPDF(fileInput.files[0], url_db);
 
@@ -942,7 +916,7 @@ Link: ${instagramUrl}
                 await addProductImage(producto1Input, producto1URL_db, descProducto1, 2);
                 await addProductImage(producto2Input, producto2URL_db, descProducto2, 60);
                 
-                // A帽adir el espacio que ocupa la caja de productos
+                // Añadir el espacio que ocupa la caja de productos
                 yOffset += 65; 
             }
 
@@ -950,19 +924,19 @@ Link: ${instagramUrl}
                 await addLogo(); // Ahora usa la URL de BD si no hay archivo local
                 addMainText();
                 
-                // Solo llama a la funci贸n si hay alg煤n dato de imagen disponible
+                // Solo llama a la función si hay algún dato de imagen disponible
                 if (producto1Input.files[0] || producto2Input.files[0] || producto1URL_db || producto2URL_db) {
                     await addProducts(); // Ahora usa la URL de BD si no hay archivo local
                 }
 
                 doc.save(`${nombreEmprendimiento}_perfil.pdf`);
             } catch (err) {
-                alert("Hubo un error al generar el PDF. Por favor, int茅ntelo de nuevo. (Revisa la consola F12 para detalles).");
+                alert("Hubo un error al generar el PDF. Por favor, inténtelo de nuevo. (Revisa la consola F12 para detalles).");
                 console.error(err);
             }
         }
 
-        // ======================== L脫GICA DE PREVISUALIZACI脫N DE IM脕GENES LOCALES ========================
+        // ======================== LÓGICA DE PREVISUALIZACIÓN DE IMÁGENES LOCALES ========================
 
         function displayPreview(file, description, containerId) {
             const container = document.getElementById(containerId);
@@ -998,7 +972,7 @@ Link: ${instagramUrl}
             if (producto2Input.files && producto2Input.files[0]) {
                 displayPreview(producto2Input.files[0], descProducto2, "productPreviews");
             }
-            // Esto asegura que si se est谩 editando una descripci贸n y no hay un archivo nuevo, se mantenga la previsualizaci贸n existente.
+            // Esto asegura que si se está editando una descripción y no hay un archivo nuevo, se mantenga la previsualización existente.
             const data = {
                  logoURL: document.getElementById("logoURL_db").value,
                  productos: [
@@ -1040,14 +1014,14 @@ Link: ${instagramUrl}
                 headerLogoDisplay.appendChild(imgClone);
             }
             
-            // Configurar el bot贸n de reseteo de filtro/formulario
+            // Configurar el botón de reseteo de filtro/formulario
             document.getElementById("resetSearchButton").onclick = window.resetSearchFilter;
         };
     </script>
 </head>
 <body>
     <h1>Ministerio de la Mujer</h1>
-    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformaci贸n digital</p>
+    <p class="subtitulo">Impulsando a artesanas y emprendedoras hacia la transformación digital</p>
 
     <div id="headerLogoDisplay"></div>
     
@@ -1061,25 +1035,25 @@ Link: ${instagramUrl}
             <input type="hidden" id="logoURL_db" value="" />
             <input type="hidden" id="producto1URL_db" value="" />
             <input type="hidden" id="producto2URL_db" value="" />
-            <label for="busquedaTexto">Buscar Perfil (Nombre, Emprendimiento o Tel茅fono)</label>
+            <label for="busquedaTexto">Buscar Perfil (Nombre, Emprendimiento o Teléfono)</label>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="busquedaTexto" placeholder="Ej: Ana, Artesan铆as, 6543-2109" style="flex-grow: 1;" />
-                <button type="button" class="btn" onclick="buscarPorTexto()" style="min-width: 100px;">Buscar 馃攳</button>
-                <button type="button" id="resetSearchButton" class="btn" style="min-width: 100px; background-color: #555; hover:background-color: #333;">Limpiar Filtro 馃攧</button>
+                <input type="text" id="busquedaTexto" placeholder="Ej: Ana, Artesanías, 6543-2109" style="flex-grow: 1;" />
+                <button type="button" class="btn" onclick="buscarPorTexto()" style="min-width: 100px;">Buscar 🔍</button>
+                <button type="button" id="resetSearchButton" class="btn" style="min-width: 100px; background-color: #555; hover:background-color: #333;">Limpiar Filtro 🔄</button>
             </div>
-            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*Busque **flexiblemente** por subcadenas en nombre de la emprendedora, emprendimiento o d铆gitos del tel茅fono.</p>
+            <p style="font-size: 0.8rem; color: #555; margin-top: 5px;">*Busque **flexiblemente** por subcadenas en nombre de la emprendedora, emprendimiento o dígitos del teléfono.</p>
             
             <label for="nombre">Nombre de la Emprendedora</label>
-            <input type="text" id="nombre" value="Ana Mar铆a Rodr铆guez" required />
+            <input type="text" id="nombre" value="Ana María Rodríguez" required />
 
             <label for="nombreEmprendimiento">Nombre del emprendimiento</label>
-            <input type="text" id="nombreEmprendimiento" value="Artesan铆as Paname帽as" required />
+            <input type="text" id="nombreEmprendimiento" value="Artesanías Panameñas" required />
             
-            <label for="telefono">N煤mero de Tel茅fono</label>
+            <label for="telefono">Número de Teléfono</label>
             <input type="text" id="telefono" value="6543-2109" required />
 
-            <label for="ubicacion">Ubicaci贸n del Emprendimiento</label>
-            <input type="text" id="ubicacion" value="Ciudad de Panam谩, Panam谩" required />
+            <label for="ubicacion">Ubicación del Emprendimiento</label>
+            <input type="text" id="ubicacion" value="Ciudad de Panamá, Panamá" required />
         </section>
 
         <section>
@@ -1087,8 +1061,8 @@ Link: ${instagramUrl}
             <input type="file" id="logo" accept="image/*" />
             <div id="logoPreview" class="preview-container"></div>
             
-            <label for="descripcion">Descripci贸n de sus productos</label>
-            <textarea id="descripcion" required>Somos un emprendimiento que se especializa en la creaci贸n de productos artesanales 煤nicos, inspirados en la rica cultura y tradiciones de Panam谩.</textarea>
+            <label for="descripcion">Descripción de sus productos</label>
+            <textarea id="descripcion" required>Somos un emprendimiento que se especializa en la creación de productos artesanales únicos, inspirados en la rica cultura y tradiciones de Panamá.</textarea>
 
             <label for="instagram">Instagram del negocio</label>
             <input type="text" id="instagram" value="@artesanias_panamenas" required />
@@ -1098,11 +1072,11 @@ Link: ${instagramUrl}
             <h3>Productos de Muestra</h3>
             <label for="producto1">Producto 1</label>
             <input type="file" id="producto1" accept="image/*" />
-            <input type="text" id="descProducto1" placeholder="Descripci贸n Producto 1" value="Bolso de fibra natural" />
+            <input type="text" id="descProducto1" placeholder="Descripción Producto 1" value="Bolso de fibra natural" />
 
             <label for="producto2">Producto 2</label>
             <input type="file" id="producto2" accept="image/*" />
-            <input type="text" id="descProducto2" placeholder="Descripci贸n Producto 2" value="Cuadro de arte Ember谩" />
+            <input type="text" id="descProducto2" placeholder="Descripción Producto 2" value="Cuadro de arte Emberá" />
         </div>
         
         <div id="productPreviews" class="preview-container"></div>
