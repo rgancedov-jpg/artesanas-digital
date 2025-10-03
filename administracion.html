@@ -642,7 +642,8 @@
             try {
                 // 1. OBTENER TODOS LOS DATOS
                 const profilesRef = collection(db, "perfiles");
-                const q = query(profilesRef, orderBy("nombreEmprendimiento", "asc"));
+                //const q = query(profilesRef, orderBy("nombreEmprendimiento", "asc"));
+				const q = query(profilesRef, orderBy("nombre", "asc")); 
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
