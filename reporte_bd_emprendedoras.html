@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Informe de Perfiles (Todo a 50 Ch.) - REAL TIME</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <script type="module">
         // Importa los módulos necesarios de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getFirestore, collection, query, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-        
+
         // =================================================================================
         // CONFIGURACIÓN DE FIREBASE (Tomada de administracion.html)
         // =================================================================================
@@ -25,20 +25,19 @@
             measurementId: "G-SQPMWH7G50" 
         };
         // =================================================================================
-        
+
         // Inicializar Firebase y Firestore
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const perfilesRef = collection(db, "perfiles");
-        
+
         const tableBody = document.getElementById('tableBody');
         const loadingIndicator = document.getElementById('loadingIndicator');
-
+        
         /**
          * Función para truncar el texto al límite de caracteres.
          */
         const DESC_LIMIT = 50; // Límite uniforme para todos los campos de texto largo
-
         function truncateText(text, maxLength = DESC_LIMIT) {
             if (!text || text.length <= maxLength) {
                 return text || 'N/A';
@@ -46,7 +45,7 @@
             // Truncamos el texto al límite de caracteres y añadimos "..."
             return text.substring(0, maxLength) + '...';
         }
-
+        
         /**
          * Función principal para cargar todos los registros y generar la tabla.
          */
@@ -55,17 +54,25 @@
             tableBody.innerHTML = '';
             
             try {
-                // Consulta sin límite para obtener todos los registros
-                const q = query(perfilesRef, orderBy("nombreEmprendimiento", "asc")); 
+                // Ordenar alfabéticamente por 'nombre_lower' (Nombre de la Artesana)
+                const q = query(perfilesRef, orderBy("nombre_lower", "asc")); 
                 const querySnapshot = await getDocs(q);
                 
+                // Obtener y mostrar el total de registros cargados
+                const recordCount = querySnapshot.size;
+                document.getElementById('recordCountDisplay').textContent = recordCount;
+
+
                 if (querySnapshot.empty) {
                     const row = tableBody.insertRow();
+                    // Colspan ajustado de 9 a 10 para incluir la nueva columna N°
                     row.insertCell(0).textContent = "No hay registros en la base de datos para mostrar.";
-                    row.cells[0].colSpan = 9; 
+                    row.cells[0].colSpan = 10; 
                     row.cells[0].className = 'text-center py-6 text-gray-500 italic';
                     return;
                 }
+                
+                let counter = 1; // 💡 Nuevo contador para enumerar los registros
                 
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
@@ -76,31 +83,35 @@
                     const row = tableBody.insertRow();
                     row.className = 'hover:bg-gray-50 transition-colors';
                     
-                    // Columna 1: Artesana Nombre
+                    // Columna 1: N° (Número de registro)
+                    const numCell = row.insertCell();
+                    numCell.textContent = counter++;
+                    numCell.className = 'text-center font-bold text-gray-700';
+                    
+                    // Columna 2: Artesana Nombre
                     row.insertCell().textContent = data.nombre || 'N/A';
                     
-                    // Columna 2: Emprendimiento Nombre
+                    // Columna 3: Emprendimiento Nombre
                     row.insertCell().textContent = data.nombreEmprendimiento || 'Sin Nombre';
                     
-                    // Columna 3: Teléfono
+                    // Columna 4: Teléfono
                     row.insertCell().textContent = data.telefono || 'N/A';
                     
-                    // Columna 4: Ubicación (TRUNCADA a 50 caracteres)
+                    // Columna 5: Ubicación (TRUNCADA a 50 caracteres)
                     row.insertCell().textContent = truncateText(data.ubicacion);
                     
-                    // Columna 5: Instagram
+                    // Columna 6: Instagram
                     row.insertCell().textContent = data.instagram || 'N/A';
                     
-                    // Columna 6: Descripción (TRUNCADA a 50 caracteres)
+                    // Columna 7: Descripción (TRUNCADA a 50 caracteres)
                     row.insertCell().textContent = truncateText(data.descripcion);
-
-                    // Columna 7: Producto 1 (Desc.) - TRUNCADA a 50 caracteres
+                    // Columna 8: Producto 1 (Desc.) - TRUNCADA a 50 caracteres
                     row.insertCell().textContent = truncateText(prod1?.descripcion);
                     
-                    // Columna 8: Producto 2 (Desc.) - TRUNCADA a 50 caracteres
+                    // Columna 9: Producto 2 (Desc.) - TRUNCADA a 50 caracteres
                     row.insertCell().textContent = truncateText(prod2?.descripcion);
                     
-                    // Columna 9: Fecha Creación
+                    // Columna 10: Fecha Creación
                     row.insertCell().textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'N/A';
                 });
                 
@@ -108,8 +119,9 @@
                 console.error("Error al cargar registros desde Firestore:", error);
                 const row = tableBody.insertRow();
                 row.insertCell(0).textContent = `ERROR al conectar o cargar datos: ${error.message}`;
-                row.cells[0].colSpan = 9;
+                row.cells[0].colSpan = 10; // Colspan ajustado a 10
                 row.cells[0].className = 'text-center py-6 text-red-600 font-bold';
+                document.getElementById('recordCountDisplay').textContent = 'ERROR';
             } finally {
                 loadingIndicator.classList.add('hidden');
             }
@@ -166,31 +178,34 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* Estilo específico para la columna de numeración */
+        th:first-child, td:first-child {
+            width: 50px; 
+            min-width: 50px;
+            max-width: 50px;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="p-6 bg-gray-50">
-
     <header class="text-center mb-6">
         <h1 class="text-2xl font-bold text-gray-700">Ministerio de la Mujer - Informe de Perfiles (Datos Reales)</h1>
-        <p class="text-sm text-gray-500">Listado de todos los registros de la base de datos de Firestore.</p>
+        <p class="text-sm text-gray-500">Listado de todos los registros de la base de datos de Firestore. (Total: <span id="recordCountDisplay">...</span>)</p>
     </header>
-
     <div class="no-print text-center mb-6">
         <button onclick="window.print()" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap shadow-md">
             📄 Generar PDF / Imprimir Informe
         </button>
         <p class="mt-2 text-xs text-gray-600">Al hacer clic, en el diálogo de impresión, selecciona **"Guardar como PDF"** y **Orientación Horizontal**.</p>
     </div>
-
     <div id="loadingIndicator" class="text-center py-10 text-violet-600 font-semibold text-lg no-print">
         Cargando datos reales de la base de datos... ⏳
     </div>
-
     <div class="table-container overflow-x-auto shadow-xl rounded-lg bg-white">
         <table class="min-w-full border-collapse">
             <thead>
                 <tr>
-                    <th>Artesana Nombre</th>
+                    <th>N°</th> <th>Artesana Nombre</th>
                     <th>Emprendimiento Nombre</th>
                     <th>Teléfono</th>
                     <th>Ubicación (50 Ch.)</th>
@@ -202,7 +217,7 @@
                 </tr>
             </thead>
             <tbody id="tableBody">
-                </tbody>
+            </tbody>
         </table>
     </div>
     <p class="mt-4 text-xs text-gray-600">**Nota:** Todos los campos de texto largo (Ubicación y Descripciones) están limitados a **50 caracteres**.</p>
