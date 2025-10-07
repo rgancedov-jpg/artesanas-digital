@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Actas de Entrega de Insumos</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #e8eaf6; /* Fondo azul claro */
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #1a237e; /* Azul oscuro */
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        .subtitulo {
+            color: #3f51b5; /* Azul medio */
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        form {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 800px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 15px;
+            display: block;
+            color: #333;
+        }
+        input[type="text"], input[type="date"], input[type="number"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        .items-section {
+            border: 1px dashed #3f51b5;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            background: #f8f9fe;
+        }
+        .item-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .item-row input {
+            margin: 0;
+            padding: 8px;
+        }
+        .item-row .desc-input { flex: 4; }
+        .item-row .cant-input { flex: 1; }
+        .item-row .valor-input { flex: 2; }
+        .btn-addItem {
+            background-color: #4caf50; /* Verde */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-removeItem {
+            background-color: #f44336; /* Rojo */
+            color: white;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            background-color: #3f51b5; /* Azul principal */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+        .btn:hover { background-color: #1a237e; }
+        
+        .btn-save {
+            background-color: #4caf50; /* Verde para guardar */
+        }
+        .btn-save:hover { background-color: #388e3c; }
+        
+        .btn-delete {
+            background-color: #f44336; /* Rojo para borrar */
+        }
+        .btn-delete:hover { background-color: #d32f2f; }
+        
+        #totalDisplay {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1a237e;
+            text-align: right;
+        }
+    </style>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, getDocs, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        
+        // =================================================================================
+        // CONFIGURACIÓN DE FIREBASE (¡DEBES ACTUALIZAR CON TUS CREDENCIALES!)
+        // =================================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVzAro7RdogHAkW1R8VTjVpNhi7cCSXZY", 
+            authDomain: "artesanas-panama-digital.firebaseapp.com", 
+            projectId: "artesanas-panama-digital", 
+            storageBucket: "artesanas-panama-digital.firebasestorage.app", 
+            messagingSenderId: "216158084302", 
+            appId: "1:216158084302:web:e3c38b4a1a7234c7a8449f", 
+            measurementId: "G-SQPMWH7G50" 
+        };
+        // =================================================================================
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const COLLECTION_NAME = "entregas_insumos"; // Nueva colección para Actas
+
+        // ======================== FUNCIONES AUXILIARES ========================
+
+        /**
+         * Limpia una cadena de texto, eliminando acentos y convirtiéndola a minúsculas.
+         */
+        function cleanString(str) {
+            if (!str) return '';
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        /**
+         * Lee todos los ítems de la tabla dinámica del formulario.
+         * @returns {Array} Un array de objetos con los ítems.
+         */
+        function getItemsFromForm() {
+            const items = [];
+            const rows = document.querySelectorAll('#itemsContainer .item-row');
+            rows.forEach(row => {
+                const descripcion = row.querySelector('.desc-input').value.trim();
+                const cantidad = parseFloat(row.querySelector('.cant-input').value) || 0;
+                const valorUnitario = parseFloat(row.querySelector('.valU-input').value) || 0;
+                const valorItems = parseFloat(row.querySelector('.valT-input').value) || 0;
+
+                if (descripcion) {
+                    items.push({
+                        descripcion,
+                        cantidad,
+                        valorUnitario,
+                        valorItems
+                    });
+                }
+            });
+            return items;
+        }
+        
+        /**
+         * Calcula y muestra el total general del acta.
+         */
+        function updateTotal() {
+            const items = getItemsFromForm();
+            const total = items.reduce((sum, item) => sum + item.valorItems, 0);
+            document.getElementById("totalDisplay").textContent = `TOTAL GENERAL: B/. ${total.toFixed(2)}`;
+        }
+        
+        /**
+         * Agrega una fila de insumo dinámicamente al formulario.
+         * @param {Object} [item] Datos opcionales para llenar la fila.
+         */
+        function addItemRow(item = {}) {
+            const container = document.getElementById("itemsContainer");
+            const newRow = document.createElement("div");
+            newRow.className = "item-row";
+            newRow.innerHTML = `
+                <input type="text" class="desc-input" placeholder="Descripción del Bien" value="${item.descripcion || ''}" required>
+                <input type="number" step="1" class="cant-input" placeholder="Cant." value="${item.cantidad || ''}" oninput="window.updateTotal()">
+                <input type="number" step="0.01" class="valU-input" placeholder="V. Unitario" value="${item.valorUnitario || ''}" oninput="window.updateTotal()">
+                <input type="number" step="0.01" class="valT-input" placeholder="V. Total" value="${item.valorItems || ''}" oninput="window.updateTotal()">
+                <button type="button" class="btn-removeItem" onclick="this.parentNode.remove(); window.updateTotal();">➖</button>
+            `;
+            container.appendChild(newRow);
+            // Asegurar que el cálculo se actualice si se añaden elementos pre-cargados
+            updateTotal();
+        }
+
+        /**
+         * Limpia todos los campos del formulario.
+         */
+        window.limpiarFormularioActa = function() {
+            document.getElementById("actaForm").reset(); 
+            document.getElementById("actaDocId").value = ""; 
+            document.getElementById("actaBusquedaTexto").value = ""; 
+            document.getElementById("itemsContainer").innerHTML = ""; // Limpia los items
+            document.getElementById("totalDisplay").textContent = "TOTAL GENERAL: B/. 0.00"; 
+            window.addItemRow(); // Deja una fila vacía para empezar
+        }
+        
+        /**
+         * Llena el formulario con los datos de un Acta encontrada.
+         */
+        function llenarFormularioActa(data, docId) {
+            document.getElementById("actaDocId").value = docId || "";
+            document.getElementById("actaNo").value = data.noActa || "";
+            document.getElementById("actaFecha").value = data.fechaActa || "";
+            document.getElementById("actaProyecto").value = data.proyecto || "";
+            document.getElementById("actaNombreEmprendedora").value = data.emprendedora || "";
+            document.getElementById("actaCedulaEmprendedora").value = data.cedulaEmprendedora || "";
+            document.getElementById("actaCoordinador").value = data.coordinadorNacional || "";
+            
+            // Limpia y llena la sección de ítems
+            document.getElementById("itemsContainer").innerHTML = "";
+            if (data.items && data.items.length > 0) {
+                data.items.forEach(item => addItemRow(item));
+            } else {
+                 addItemRow();
+            }
+            updateTotal();
+        }
+
+        // ======================== FUNCIONES PRINCIPALES DE FIREBASE (CRUD) ========================
+
+        // ** FUNCIÓN CLAVE **: GUARDA O ACTUALIZA ACTA
+        window.guardarActaEnBD = async function () {
+            const form = document.getElementById("actaForm");
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                alert("Por favor, rellene los campos obligatorios antes de guardar.");
+                return;
+            }
+
+            const docId = document.getElementById("actaDocId").value.trim(); 
+            const noActa = document.getElementById("actaNo").value.trim();
+            const emprendedora = document.getElementById("actaNombreEmprendedora").value.trim();
+            const items = getItemsFromForm(); 
+            const total = items.reduce((sum, item) => sum + item.valorItems, 0);
+            
+            if (!noActa || !emprendedora || items.length === 0) {
+                alert("ERROR: Debe ingresar No. de Acta, Nombre de Emprendedora y al menos un ítem.");
+                return;
+            }
+
+            const btnGuardar = document.getElementById("btnGuardarActa");
+            const originalText = btnGuardar ? btnGuardar.textContent : null;
+            
+            if (btnGuardar) {
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = docId ? "Actualizando Acta..." : "Guardando Acta...";
+            }
+
+            try {
+                const actaData = {
+                    noActa: noActa,
+                    fechaActa: document.getElementById("actaFecha").value.trim(),
+                    proyecto: document.getElementById("actaProyecto").value.trim(),
+                    emprendedora: emprendedora,
+                    cedulaEmprendedora: document.getElementById("actaCedulaEmprendedora").value.trim(),
+                    coordinadorNacional: document.getElementById("actaCoordinador").value.trim(),
+                    items: items, // Array de insumos
+                    total: parseFloat(total.toFixed(2)),
+                    // Campos de búsqueda
+                    noActa_lower: cleanString(noActa),
+                    emprendedora_lower: cleanString(emprendedora),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                let docRef;
+                if (docId) {
+                    docRef = doc(db, COLLECTION_NAME, docId);
+                    await updateDoc(docRef, actaData);
+                    alert("✅ Acta actualizada correctamente.");
+                } else {
+                    docRef = await addDoc(collection(db, COLLECTION_NAME), {
+                        ...actaData,
+                        createdAt: new Date().toISOString()
+                    });
+                    document.getElementById("actaDocId").value = docRef.id; 
+                    alert("✅ Acta guardada correctamente con ID: " + docRef.id);
+                }
+                
+                // Recargar el acta guardada/actualizada
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    llenarFormularioActa(docSnap.data(), docSnap.id);
+                }
+                
+            } catch (err) {
+                console.error("Error guardando Acta en Firebase:", err);
+                alert("❌ Ocurrió un error al guardar el Acta. Revisa la consola (F12).");
+            } finally {
+                if (btnGuardar) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.textContent = originalText;
+                }
+            }
+        };
+
+        // ** FUNCIÓN DE BÚSQUEDA DEL ACTA **
+        window.buscarActaPorTexto = async function () {
+            const textoBusqueda = document.getElementById("actaBusquedaTexto").value.trim();
+            
+            if (!textoBusqueda) {
+                alert("Por favor, ingrese el Número de Acta o Nombre de la Emprendedora para buscar.");
+                return;
+            }
+            
+            const btnBuscar = document.querySelector('#actaForm button[onclick="buscarActaPorTexto()"]');
+            const originalText = btnBuscar.textContent;
+            btnBuscar.disabled = true;
+            btnBuscar.textContent = "Buscando Acta...";
+
+            try {
+                const actasRef = collection(db, COLLECTION_NAME);
+                const cleanSearch = cleanString(textoBusqueda);
+
+                let querySnapshot = await getDocs(actasRef);
+                let docSnap = null;
+                const docs = querySnapshot.docs;
+
+                // Búsqueda en el cliente (flexible por nombre o número de acta parcial)
+                for (const doc of docs) {
+                    const data = doc.data();
+                    const cleanEmprendedora = cleanString(data.emprendedora);
+                    const cleanNoActa = cleanString(data.noActa);
+
+                    // Criterio de Match:
+                    if (cleanEmprendedora.includes(cleanSearch) || cleanNoActa.includes(cleanSearch)) {
+                        docSnap = doc;
+                        break;
+                    }
+                }
+
+                if (!docSnap) {
+                    alert(`❌ No se encontró ningún Acta que coincida con: ${textoBusqueda}. Puede crear una nueva.`);
+                    window.limpiarFormularioActa();
+                    document.getElementById("actaBusquedaTexto").value = textoBusqueda;
+                } else {
+                    llenarFormularioActa(docSnap.data(), docSnap.id);
+                    alert(`✅ Acta encontrada: ${docSnap.data().noActa}`);
+                }
+
+            } catch (error) {
+                console.error("Error al buscar el Acta:", error);
+                alert("❌ Ocurrió un error al intentar la búsqueda del Acta.");
+            } finally {
+                btnBuscar.disabled = false;
+                btnBuscar.textContent = originalText;
+            }
+        };
+        
+        // ** FUNCIÓN DE BORRADO DE ACTA **
+        window.borrarActa = async function () {
+            const docId = document.getElementById("actaDocId").value.trim();
+            const noActa = document.getElementById("actaNo").value.trim() || 'este registro';
+
+            if (!docId) {
+                alert("❌ Error: No se ha cargado ninguna Acta para borrar. Use el botón 'Buscar' primero.");
+                return;
+            }
+
+            if (!confirm(`⚠️ ¿Está seguro que desea BORRAR PERMANENTEMENTE el Acta: ${noActa}? Esta acción es irreversible.`)) {
+                return;
+            }
+
+            const btnBorrar = document.getElementById("btnBorrarActa");
+            const originalText = btnBorrar.textContent;
+            btnBorrar.disabled = true;
+            btnBorrar.textContent = "Borrando...";
+
+            try {
+                const docRef = doc(db, COLLECTION_NAME, docId);
+                await deleteDoc(docRef); 
+
+                alert(`✅ El Acta ${noActa} ha sido borrada exitosamente.`);
+                window.limpiarFormularioActa();
+
+            } catch (error) {
+                console.error("Error al borrar el Acta:", error);
+                alert(`❌ Ocurrió un error al intentar borrar el Acta: ${error.message}`);
+            } finally {
+                btnBorrar.disabled = false;
+                btnBorrar.textContent = originalText;
+            }
+        };
+
+        window.onload = function() {
+            // Inicializar con una fila de insumo vacía
+            window.addItemRow(); 
+            document.getElementById("btnAgregarItem").onclick = () => window.addItemRow();
+        };
+
+        window.updateTotal = updateTotal; // Exportar al scope global
+    </script>
+</head>
+<body>
+    <h1>Ministerio de la Mujer</h1>
+    <p class="subtitulo">Gestión de Actas de Entrega de Insumos (PANAMÁ DIGITAL)</p>
+
+    <form id="actaForm">
+        <input type="hidden" id="actaDocId" value="" />
+        
+        <section>
+            <h3>Buscar y Datos Generales del Acta</h3>
+            
+            <label for="actaBusquedaTexto">Buscar Acta (No. de Acta o Emprendedora)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="actaBusquedaTexto" placeholder="Ej: A - No. 033 o Leticia Saturno" style="flex-grow: 1;" />
+                <button type="button" class="btn" onclick="buscarActaPorTexto()" style="min-width: 100px;">Buscar 🔍</button>
+                <button type="button" class="btn" onclick="limpiarFormularioActa()" style="min-width: 100px; background-color: #555;">Nuevo/Limpiar 🔄</button>
+            </div>
+            
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <label for="actaNo">No. de Acta (Ej: A - No. 033)</label>
+                    <input type="text" id="actaNo" required />
+                </div>
+                <div style="flex: 1;">
+                    <label for="actaFecha">Fecha del Acta</label>
+                    <input type="date" id="actaFecha" value="2025-07-22" required />
+                </div>
+            </div>
+
+            <label for="actaProyecto">Nombre del Proyecto (Ej: Artesanías, Manualidades y Vestuarios)</label>
+            <input type="text" id="actaProyecto" required />
+            
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 2;">
+                    <label for="actaNombreEmprendedora">Nombre de la Emprendedora</label>
+                    <input type="text" id="actaNombreEmprendedora" required />
+                </div>
+                <div style="flex: 1;">
+                    <label for="actaCedulaEmprendedora">Cédula</label>
+                    <input type="text" id="actaCedulaEmprendedora" />
+                </div>
+            </div>
+            
+            <label for="actaCoordinador">Coordinador Nacional que Entrega</label>
+            <input type="text" id="actaCoordinador" value="Ricardo Cruz" required />
+        </section>
+
+        <div class="items-section">
+            <h3>Detalle de los Insumos Entregados</h3>
+            
+            <div class="item-row" style="font-weight: bold; margin-bottom: 5px;">
+                <span style="flex: 4;">DESCRIPCIÓN DEL BIEN</span>
+                <span style="flex: 1;">CANT.</span>
+                <span style="flex: 2;">VALOR UNITARIO</span>
+                <span style="flex: 2;">VALOR TOTAL (B/.)</span>
+                <span style="width: 30px;"></span>
+            </div>
+            
+            <div id="itemsContainer">
+                </div>
+            
+            <div style="text-align: right; margin-top: 15px;">
+                <button type="button" id="btnAgregarItem" class="btn-addItem">➕ Agregar Insumo</button>
+            </div>
+        </div>
+        
+        <div id="totalDisplay">TOTAL GENERAL: B/. 0.00</div>
+        
+        <div class="btn-container">
+            <button type="button" id="btnBorrarActa" class="btn btn-delete" onclick="borrarActa()">Borrar Acta</button>
+            <button type="button" id="btnGuardarActa" class="btn btn-save" onclick="guardarActaEnBD()">Guardar en BD</button>
+        </div>
+    </form>
+</body>
+</html>
