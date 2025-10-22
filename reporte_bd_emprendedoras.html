@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head> 
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Informe de Perfiles (Todo a 50 Ch.) - REAL TIME</title>
@@ -11,6 +11,14 @@
         // Importa los módulos necesarios de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getFirestore, collection, query, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+		
+		// ========================================================================
+        // FUNCIÓN DE REDIRECCIÓN A INICIO.HTML
+        // ========================================================================
+        window.regresarAlMenuPrincipal = function() {
+            window.location.href = 'index.html'; 
+        }
+        // ========================================================================		
 
         // =================================================================================
         // CONFIGURACIÓN DE FIREBASE (Tomada de administracion.html)
@@ -193,6 +201,10 @@
         <p class="text-sm text-gray-500">Listado de todos los registros de la base de datos de Firestore. (Total: <span id="recordCountDisplay">...</span>)</p>
     </header>
     <div class="no-print text-center mb-6">
+		<button onclick="regresarAlMenuPrincipal()" 
+                class="bg-[#ff9900] hover:bg-[#cc7a00] text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap shadow-md mr-4">
+            Regresar al Menú Principal
+        </button>	
         <button onclick="window.print()" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition-colors whitespace-nowrap shadow-md">
             📄 Generar PDF / Imprimir Informe
         </button>
