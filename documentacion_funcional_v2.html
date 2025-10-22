@@ -4,7 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Documentación Consolidada - Perfiles Digitales (v2)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<!-- Carga de Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Tu función personalizada (en bloque aparte) -->
+<script>
+  // ========================================================================
+  // FUNCIÓN DE REDIRECCIÓN A INICIO.HTML (misma ventana)
+  // ========================================================================
+  window.regresarAlMenuPrincipal = function() {
+    window.location.href = 'index.html';
+  };
+  // ========================================================================
+</script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -79,13 +90,14 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Documentación Consolidada - Perfiles Digitales (v2)</h1>
-        <p class="text-lg font-medium">Esta documentación detalla las funcionalidades de la última versión del formulario principal y el panel de administración.</p>
-
-        <h2>I. Funcionalidades del Formulario Principal (`index.html`)</h2>
-        <p class="font-semibold text-gray-700">🚀 Resumen: Esta versión consolida el formulario como una herramienta completa de gestión y difusión de perfiles (CRUD).</p>
-
+<div class="container">
+        <div class="flex justify-between items-center mb-6">
+            <h1>Documentación Consolidada de la Aplicación (v2)</h1>
+            <button onclick="regresarAlMenuPrincipal()" 
+                    class="bg-[#ff9900] hover:bg-[#cc7a00] text-white font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap text-sm shadow-md">
+                Regresar al Menú Principal
+            </button>
+        </div>
         <h3>1. Botones (CRUD y Utilidades)</h3>
         <table>
             <thead>
@@ -138,7 +150,7 @@
         </ul>
 
         <h3>3. 📦 Almacenamiento de imágenes con Cloudinary</h3>
-        <p>El formulario en `index.html` está configurado para que todas las imágenes (logo y productos) se guarden en Cloudinary, no en Firebase Storage.</p>
+        <p>El formulario en `inicio.html` está configurado para que todas las imágenes (logo y productos) se guarden en Cloudinary, no en Firebase Storage.</p>
         <p class="font-semibold">Configuración necesaria en Cloudinary:</p>
         <ul>
             <li><span class="tag">Cloud Name: djvnsgfcl</span></li>
