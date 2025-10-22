@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es"> 
+<html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,6 +12,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <script type="module">
+	
+// ======================== FUNCIÓN DE REDIRECCIÓN ========================
+    window.regresarAlMenuPrincipal = function() {
+        // Redirige a 'index.html' en la MISMA ventana (comportamiento por defecto)
+        window.location.href = 'index.html'; 
+    }
+    // ========================================================================	
+	
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
         import { getFirestore, collection, doc, getDoc, query, getDocs, orderBy, startAfter, limit, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
         
@@ -310,10 +318,12 @@
             const prod2 = data.productos?.[1];
             
             document.getElementById('detailProd1').innerHTML = `
+                <p class="font-semibold text-gray-700">Producto 1:</p>
                 <p><strong>Desc:</strong> ${prod1?.descripcion || 'N/A'}</p>
                 <p class="text-xs text-gray-500 truncate">URL: ${prod1?.url ? `<a href="${prod1.url}" target="_blank" class="text-blue-500 hover:underline">${prod1.url.substring(0, 30)}...</a></p>` : 'N/A'}</p>
             `;
             document.getElementById('detailProd2').innerHTML = `
+                <p class="font-semibold text-gray-700">Producto 2:</p>
                 <p><strong>Desc:</strong> ${prod2?.descripcion || 'N/A'}</p>
                 <p class="text-xs text-gray-500 truncate">URL: ${prod2?.url ? `<a href="${prod2.url}" target="_blank" class="text-blue-500 hover:underline">${prod2.url.substring(0, 30)}...</a></p>` : 'N/A'}</p>
             `;
@@ -428,7 +438,7 @@
             }
         };
         
-        // ======================== LÓGICA DE PDF MASIVO (INTEGRACIÓN) ========================
+        // ======================== LÓGICA DE PDF MASIVO E INDIVIDUAL ========================
         
         const { jsPDF } = window.jspdf;
 
@@ -678,7 +688,43 @@
                 btn.textContent = 'Descargar/Imprimir PDF Masivo'; 
             }
         }
-        
+
+        // ======================== FUNCIÓN PDF INDIVIDUAL (CORREGIDA Y FINAL) ========================
+        window.generarPDFIndividual = async function() {
+            // Verifica que haya un perfil cargado en la memoria
+            if (!selectedDocId || !currentRecordData) {
+                alert("Por favor, seleccione un registro en la tabla para generar su PDF.");
+                return;
+            }
+
+            const btn = document.getElementById('btnPdfIndividual');
+            btn.disabled = true;
+            btn.textContent = 'Generando PDF...';
+
+            try {
+                // Crea un nuevo documento PDF
+                const doc = new jsPDF();
+                
+                // Genera el contenido SOLO del perfil actual (currentRecordData)
+                await generarPDFPerfil(doc, currentRecordData);
+
+                // Guarda el archivo final
+                const nombreArchivo = currentRecordData.nombreEmprendimiento || currentRecordData.nombre || 'Perfil';
+                const filename = `${nombreArchivo.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedDocId.substring(0, 5)}.pdf`;
+                doc.save(filename);
+                
+                alert(`✅ PDF Individual de "${currentRecordData.nombreEmprendimiento || currentRecordData.nombre}" generado exitosamente.`);
+
+            } catch (error) {
+                console.error("Error al generar PDF Individual:", error);
+                alert("❌ Ocurrió un error al generar el PDF Individual.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📄 Imprimir PDF'; 
+            }
+        }
+        // ===========================================================================================
+
         // ======================== INICIALIZACIÓN ========================
         window.onload = function() {
             loadRecords('initial');
@@ -747,6 +793,34 @@
             width: 100%;
             box-sizing: border-box;
         }
+		/* Estilos para el botón de Menú Principal */
+        .btn-menu {
+            padding: 10px 15px;
+            border: none;
+            background-color: #ff9900; /* Naranja */
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-menu:hover {
+            background-color: #cc7a00; /* Naranja oscuro hover */
+        }
+        /* Contenedor para alinear el título y el botón */
+        .header-with-button {
+            display: flex;
+            justify-content: space-between; /* Mueve el botón al extremo derecho */
+            align-items: center; /* Centra verticalmente */
+            margin-bottom: 20px; 
+            width: 100%;
+        }
+        .header-with-button h1 {
+             margin: 0; /* Elimina márgenes del h1 para centrado limpio */
+        }		
     </style>
 </head>
 <body class="p-0">
@@ -758,11 +832,17 @@
             <p class="text-sm">Vista de tabla y detalles de Perfiles Digitales.</p>
         </div>
     </header>
-    <div class="main-container flex flex-col lg:flex-row p-6 gap-6">
-        <div class="lg:w-2/3 w-full bg-white p-6 rounded-lg shadow-xl">
-            <h2 class="text-xl font-bold text-gray-700 mb-4">Catálogo de Perfiles</h2>
-            
-            <div class="mb-6 border p-4 rounded-lg bg-gray-50">
+	<div class="main-container flex flex-col lg:flex-row p-6 gap-6">
+		<div class="lg:w-2/3 w-full bg-white p-6 rounded-lg shadow-xl">
+        
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-700">Catálogo de Perfiles</h2>
+            <button onclick="regresarAlMenuPrincipal()" 
+					class="bg-[#ff9900] hover:bg-[#cc7a00] text-white font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap text-sm shadow-md">					
+                Regresar al Menú Principal
+            </button>
+        </div>
+        <div class="mb-6 border p-4 rounded-lg bg-gray-50">
                 <label for="searchInput" class="font-semibold text-gray-700 mb-2 block">Buscar Perfil (Nombre, Emprendimiento o Teléfono)</label>
                 
                 <div class="flex flex-col gap-3">
@@ -837,6 +917,10 @@
                 </button>
                 
                 <div id="viewButtonsContainer">
+                    <button id="btnPdfIndividual" onclick="generarPDFIndividual()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded transition-colors text-sm">
+                        📄 Imprimir PDF
+                    </button>
                 </div>
                 
                 <div id="editButtons" class="flex gap-2 hidden">
@@ -895,10 +979,8 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="detail-item border-none" id="detailProd1">
-                        <p class="font-semibold text-gray-700">Producto 1:</p>
                     </div>
                     <div class="detail-item border-none" id="detailProd2">
-                        <p class="font-semibold text-gray-700">Producto 2:</p>
                     </div>
                 </div>
             </div>
