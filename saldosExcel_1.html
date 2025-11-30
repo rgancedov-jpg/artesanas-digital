@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Saldos Cripto</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #272744;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #e0f7fa;
+        }
+
+        /* Sección de Entrada de Datos - Mejorada */
+        .input-section {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+
+        #saldoInput, #fechaInput {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3f3f6e;
+            color: #fff;
+            width: 150px;
+        }
+
+        /* Estilo para el input de fecha */
+        #fechaInput[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #00bcd4;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            height: 40px;
+            margin-bottom: 3px;
+        }
+
+        button:hover {
+            background-color: #0097a7;
+        }
+        
+        /* Botones de la tabla */
+        .action-button {
+            padding: 5px 8px;
+            margin: 0 2px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .edit-btn { background-color: #ffc107; color: #1a1a2e; }
+        .edit-btn:hover { background-color: #e0a800; }
+        
+        .delete-btn { background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+
+
+        /* Notificación Automática (Toast) */
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50; /* Verde por defecto */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        #notification.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        #notification.error {
+            background-color: #f44336; /* Rojo para errores */
+        }
+        
+        /* Estilos para el porcentaje de cambio */
+        .positive-change {
+            color: #4CAF50; /* Verde */
+            font-weight: bold;
+            margin-left: 10px; /* Separación visual del saldo */
+        }
+
+        .negative-change {
+            color: #f44336; /* Rojo */
+            font-weight: bold;
+            margin-left: 10px; /* Separación visual del saldo */
+        }
+        
+        .no-change {
+            color: #ccc;
+            margin-left: 10px;
+        }
+
+
+        /* Gráfica */
+        .chart-container {
+            height: 400px;
+            margin-top: 30px;
+            background-color: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* Tabla de Histórico */
+        .table-container {
+            margin-top: 40px;
+        }
+
+        #dataTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        #dataTable th, #dataTable td {
+            padding: 12px;
+            border-bottom: 1px solid #3f3f6e;
+            text-align: left;
+        }
+
+        #dataTable th {
+            background-color: #00bcd4;
+            color: #1a1a2e;
+        }
+        
+        /* Estilo para el modo edición en la tabla */
+        .editing {
+            background-color: #3f3f6e !important;
+        }
+        .editing input {
+            background-color: #4f4f7e;
+            color: #fff;
+            border: 1px solid #00bcd4;
+            padding: 5px;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Histórico de Saldo Total</h1>
+        
+        <div class="input-section">
+            
+            <div class="input-group">
+                <label for="fechaInput">Fecha del Saldo:</label>
+                <input type="date" id="fechaInput">
+            </div>
+
+            <div class="input-group">
+                <label for="saldoInput">Saldo Total (USD):</label>
+                <input type="text" id="saldoInput" placeholder="$1,234.56">
+            </div>
+
+            <button onclick="guardarSaldo()">Guardar Saldo</button>
+        </div>
+
+        <div id="notification"></div>
+
+        <div class="chart-container">
+            <h2>📈 Comparativa Histórica</h2>
+            <canvas id="saldoChart"></canvas>
+        </div>
+
+        <div class="table-container">
+            <h2>📜 Histórico de Datos</h2>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Saldo (USD) y Cambio (%)</th> <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let historialSaldos = [];
+        let chart;
+
+        // Función para mostrar la notificación automática
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            
+            if (isError) {
+                notification.classList.add('error');
+            } else {
+                notification.classList.remove('error');
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Función auxiliar para obtener la fecha de hoy en formato YYYY-MM-DD
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Función para obtener la fecha formateada (ej: 30 Nov 2025)
+        function formatDisplayDate(dateString) {
+            const date = new Date(dateString.replace(/-/g, '/'));
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return isNaN(date) ? dateString : date.toLocaleDateString('es-ES', options); 
+        }
+        
+        // Aplica formato de coma de miles y punto decimal
+        function formatNumberWithCommas(number) {
+            return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+
+        // Función principal para GUARDAR (CREAR/REEMPLAZAR)
+        function guardarSaldo() {
+            const saldoInput = document.getElementById('saldoInput');
+            const fechaInput = document.getElementById('fechaInput');
+            
+            // 1. Limpieza de Entrada
+            let rawValue = saldoInput.value.trim();
+            rawValue = rawValue.replace(/[$,\s]/g, ''); 
+            rawValue = rawValue.replace(/,/g, '.'); 
+            
+            const saldo = parseFloat(rawValue);
+            const fechaValor = fechaInput.value || getTodayDateString(); 
+
+            if (isNaN(saldo) || saldo <= 0) {
+                showNotification("Por favor, ingresa un saldo válido.", true);
+                return;
+            }
+
+            const nuevoRegistro = {
+                fecha: fechaValor, 
+                saldo: saldo
+            };
+
+            const existingIndex = historialSaldos.findIndex(r => r.fecha === fechaValor);
+
+            if (existingIndex !== -1) {
+                historialSaldos[existingIndex] = nuevoRegistro;
+                showNotification(`Saldo para ${formatDisplayDate(fechaValor)} REEMPLAZADO con éxito.`);
+            } else {
+                historialSaldos.push(nuevoRegistro);
+                showNotification(`¡Nuevo Saldo guardado con éxito!`);
+            }
+            
+            localStorage.setItem('saldos', JSON.stringify(historialSaldos));
+            
+            saldoInput.value = '';
+            fechaInput.value = getTodayDateString();
+            cargarDatos();
+        }
+
+        // Función para cargar los datos almacenados
+        function cargarDatos() {
+            const storedSaldos = localStorage.getItem('saldos');
+            if (storedSaldos) {
+                historialSaldos = JSON.parse(storedSaldos);
+            }
+            
+            // 1. Ordena los datos por fecha
+            historialSaldos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+            // 2. Pre-calcular los porcentajes de cambio para toda la interfaz
+            for (let i = 0; i < historialSaldos.length; i++) {
+                const saldoActual = historialSaldos[i].saldo;
+                const saldoAnterior = i > 0 ? historialSaldos[i - 1].saldo : null;
+                
+                const cambioData = calcularCambioPorcentual(saldoActual, saldoAnterior);
+                
+                // Añadir propiedades de cambio al objeto de registro
+                historialSaldos[i].cambioTexto = cambioData.texto;
+                historialSaldos[i].cambioClase = cambioData.clase;
+                historialSaldos[i].cambioPorcentual = cambioData.porcentajeCrudo; 
+            }
+
+            actualizarTabla();
+            actualizarGrafica();
+        }
+        
+        // ---------------------------------------------------
+        // LÓGICA DE CÁLCULO DE PORCENTAJE DE CAMBIO
+        // ---------------------------------------------------
+        function calcularCambioPorcentual(saldoActual, saldoAnterior) {
+            if (saldoAnterior === undefined || saldoAnterior === null || saldoAnterior === 0) {
+                return { texto: '-', clase: 'no-change', porcentajeCrudo: null };
+            }
+            
+            const cambio = saldoActual - saldoAnterior;
+            const porcentaje = (cambio / saldoAnterior) * 100;
+            
+            let texto;
+            let clase;
+
+            if (porcentaje > 0) {
+                texto = `+${porcentaje.toFixed(2)}%`;
+                clase = 'positive-change';
+            } else if (porcentaje < 0) {
+                texto = `${porcentaje.toFixed(2)}%`;
+                clase = 'negative-change';
+            } else {
+                texto = '0.00%';
+                clase = 'no-change';
+            }
+            
+            return { texto, clase, porcentajeCrudo: porcentaje };
+        }
+
+
+        // ---------------------------------------------------
+        // DIBUJO DE LA INTERFAZ
+        // ---------------------------------------------------
+
+        // Dibuja los datos en la tabla (SALDO Y % UNIFICADOS)
+        function actualizarTabla() {
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = '';
+            
+            historialSaldos.forEach((registro, index) => {
+                const row = tableBody.insertRow();
+                row.id = `row-${index}`; 
+                
+                // Celda Fecha
+                row.insertCell().textContent = formatDisplayDate(registro.fecha); 
+                
+                // Celda Saldo (con formato de miles y el % anidado)
+                const saldoCell = row.insertCell();
+                
+                const saldoFormateado = `$${formatNumberWithCommas(registro.saldo)}`;
+                const cambioHTML = `<span class="${registro.cambioClase}">${registro.cambioTexto}</span>`;
+                
+                // Se inserta el Saldo y luego el span con el porcentaje
+                saldoCell.innerHTML = saldoFormateado + cambioHTML;
+
+                // Celda Acciones
+                const actionCell = row.insertCell();
+                actionCell.innerHTML = `
+                    <button class="action-button edit-btn" onclick="editarRegistro(${index})">Modificar</button>
+                    <button class="action-button delete-btn" onclick="eliminarRegistro(${index})">Borrar</button>
+                `;
+            });
+        }
+
+        // Dibuja la gráfica (Lógica sin cambios, ya tiene el % como eje secundario)
+        function actualizarGrafica() {
+            const ctx = document.getElementById('saldoChart').getContext('2d');
+            
+            const labels = historialSaldos.map(r => formatDisplayDate(r.fecha));
+            const saldoData = historialSaldos.map(r => r.saldo);
+            const cambioData = historialSaldos.map(r => r.cambioPorcentual);
+
+
+            if (chart) {
+                chart.destroy(); 
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Saldo Total (USD)',
+                            data: saldoData,
+                            borderColor: '#00bcd4',
+                            backgroundColor: 'rgba(0, 188, 212, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            yAxisID: 'y1' // Eje Y Primario
+                        },
+                        {
+                            label: 'Cambio % (vs Anterior)',
+                            data: cambioData,
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            yAxisID: 'y2' // Eje Y Secundario
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Saldo (USD)',
+                                color: '#fff'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff',
+                                callback: function(value, index, ticks) {
+                                    return '$' + formatNumberWithCommas(value);
+                                }
+                            }
+                        },
+                        y2: { // Configuración del Eje Y Secundario (Cambio %)
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Cambio (%)',
+                                color: '#ffc107'
+                            },
+                            grid: {
+                                drawOnChartArea: false, // No dibujar líneas de cuadrícula para este eje
+                                color: 'rgba(255, 193, 7, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffc107',
+                                callback: function(value, index, ticks) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataset.yAxisID === 'y1' && context.parsed.y !== null) {
+                                        // Formato para Saldo (USD)
+                                        label += '$' + formatNumberWithCommas(context.parsed.y);
+                                    } else if (context.dataset.yAxisID === 'y2' && context.parsed.y !== null) {
+                                        // Formato para Cambio (%)
+                                        label += context.parsed.y.toFixed(2) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ---------------------------------------------------
+        // LÓGICA DE MODIFICAR Y ELIMINAR (CRUD) 
+        // ---------------------------------------------------
+        
+        // Nota: Los índices de las celdas cambian ya que eliminamos una columna.
+        function editarRegistro(index) {
+            const registro = historialSaldos[index];
+            const row = document.getElementById(`row-${index}`);
+            
+            if (!row.classList.contains('editing')) {
+                
+                // Celda 0 (Fecha)
+                row.cells[0].innerHTML = `<input type="date" id="edit-fecha-${index}" value="${registro.fecha}">`;
+                
+                // Celda 1 (Saldo)
+                row.cells[1].innerHTML = `<input type="number" id="edit-saldo-${index}" value="${registro.saldo.toFixed(2)}" step="0.01">`;
+                
+                // Celda 2 (Acciones)
+                row.cells[2].innerHTML = `
+                    <button class="action-button edit-btn" onclick="guardarEdicion(${index})">Guardar</button>
+                    <button class="action-button delete-btn" onclick="cancelarEdicion(${index})">Cancelar</button>
+                `;
+                
+                row.classList.add('editing');
+            }
+        }
+
+        function guardarEdicion(index) {
+            const oldRegistro = historialSaldos[index];
+            // Asegurarse de que el ID del input sea el correcto
+            const newFecha = document.getElementById(`edit-fecha-${index}`).value;
+            const newSaldo = parseFloat(document.getElementById(`edit-saldo-${index}`).value);
+            
+            if (isNaN(newSaldo) || newSaldo <= 0) {
+                showNotification("El saldo editado no es válido.", true);
+                return;
+            }
+
+            if (oldRegistro.fecha !== newFecha) {
+                const existingIndex = historialSaldos.findIndex(r => r.fecha === newFecha);
+                if (existingIndex !== -1) {
+                    showNotification(`Error: Ya existe un registro para la fecha ${formatDisplayDate(newFecha)}. No se puede guardar la edición.`, true);
+                    return;
+                }
+                
+                historialSaldos.splice(index, 1);
+                historialSaldos.push({ fecha: newFecha, saldo: newSaldo });
+                showNotification(`Registro modificado y reubicado con éxito.`);
+                
+            } else {
+                oldRegistro.saldo = newSaldo;
+                showNotification(`Saldo modificado con éxito.`);
+            }
+
+            localStorage.setItem('saldos', JSON.stringify(historialSaldos));
+            cargarDatos();
+        }
+        
+        function cancelarEdicion(index) {
+            cargarDatos();
+            showNotification(`Edición cancelada.`);
+        }
+
+        function eliminarRegistro(index) {
+            const fechaAEliminar = formatDisplayDate(historialSaldos[index].fecha);
+            if (confirm(`¿Estás seguro de que quieres eliminar el registro del ${fechaAEliminar}?`)) {
+                
+                historialSaldos.splice(index, 1);
+                localStorage.setItem('saldos', JSON.stringify(historialSaldos));
+                cargarDatos();
+                showNotification(`Registro del ${fechaAEliminar} eliminado.`);
+            }
+        }
+
+        // Carga los datos y establece la fecha al iniciar la página
+        window.onload = function() {
+            cargarDatos();
+            
+            const fechaInput = document.getElementById('fechaInput');
+            fechaInput.value = getTodayDateString();
+        };
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Saldos Cripto</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #272744;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #e0f7fa;
+        }
+
+        /* Sección de Entrada de Datos - Mejorada */
+        .input-section {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+
+        #saldoInput, #fechaInput {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3f3f6e;
+            color: #fff;
+            width: 150px;
+        }
+
+        /* Estilo para el input de fecha */
+        #fechaInput[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #00bcd4;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            height: 40px;
+            margin-bottom: 3px;
+        }
+
+        button:hover {
+            background-color: #0097a7;
+        }
+        
+        /* Botones de la tabla */
+        .action-button {
+            padding: 5px 8px;
+            margin: 0 2px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .edit-btn { background-color: #ffc107; color: #1a1a2e; }
+        .edit-btn:hover { background-color: #e0a800; }
+        
+        .delete-btn { background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+
+
+        /* Notificación Automática (Toast) */
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50; /* Verde por defecto */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        #notification.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        #notification.error {
+            background-color: #f44336; /* Rojo para errores */
+        }
+        
+        /* Estilos para el porcentaje y delta de cambio */
+        .change-container {
+            display: block; /* Asegura que el delta y el % estén en una línea separada */
+            font-size: 0.9em;
+            margin-top: 4px;
+        }
+        
+        .positive-change {
+            color: #4CAF50; /* Verde */
+            font-weight: bold;
+        }
+
+        .negative-change {
+            color: #f44336; /* Rojo */
+            font-weight: bold;
+        }
+        
+        .no-change {
+            color: #ccc;
+        }
+
+
+        /* Gráfica */
+        .chart-container {
+            height: 400px;
+            margin-top: 30px;
+            background-color: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* Tabla de Histórico */
+        .table-container {
+            margin-top: 40px;
+        }
+
+        #dataTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        #dataTable th, #dataTable td {
+            padding: 12px;
+            border-bottom: 1px solid #3f3f6e;
+            text-align: left;
+        }
+
+        #dataTable th {
+            background-color: #00bcd4;
+            color: #1a1a2e;
+        }
+        
+        /* Estilo para el modo edición en la tabla */
+        .editing {
+            background-color: #3f3f6e !important;
+        }
+        .editing input {
+            background-color: #4f4f7e;
+            color: #fff;
+            border: 1px solid #00bcd4;
+            padding: 5px;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Histórico de Saldo Total</h1>
+        
+        <div class="input-section">
+            
+            <div class="input-group">
+                <label for="fechaInput">Fecha del Saldo:</label>
+                <input type="date" id="fechaInput">
+            </div>
+
+            <div class="input-group">
+                <label for="saldoInput">Saldo Total (USD):</label>
+                <input type="text" id="saldoInput" placeholder="$1,234.56">
+            </div>
+
+            <button onclick="guardarSaldo()">Guardar Saldo</button>
+        </div>
+
+        <div id="notification"></div>
+
+        <div class="chart-container">
+            <h2>📈 Comparativa Histórica</h2>
+            <canvas id="saldoChart"></canvas>
+        </div>
+
+        <div class="table-container">
+            <h2>📜 Histórico de Datos</h2>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Saldo Total (USD)</th> <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let historialSaldos = [];
+        let chart;
+
+        // Función para mostrar la notificación automática
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            
+            if (isError) {
+                notification.classList.add('error');
+            } else {
+                notification.classList.remove('error');
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Función auxiliar para obtener la fecha de hoy en formato YYYY-MM-DD
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Función para obtener la fecha formateada (ej: 30 Nov 2025)
+        function formatDisplayDate(dateString) {
+            const date = new Date(dateString.replace(/-/g, '/'));
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return isNaN(date) ? dateString : date.toLocaleDateString('es-ES', options); 
+        }
+        
+        // Aplica formato de coma de miles y punto decimal
+        function formatNumberWithCommas(number) {
+            return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+
+        // Función principal para GUARDAR (CREAR/REEMPLAZAR)
+        function guardarSaldo() {
+            const saldoInput = document.getElementById('saldoInput');
+            const fechaInput = document.getElementById('fechaInput');
+            
+            // 1. Limpieza de Entrada
+            let rawValue = saldoInput.value.trim();
+            rawValue = rawValue.replace(/[$,\s]/g, ''); 
+            rawValue = rawValue.replace(/,/g, '.'); 
+            
+            const saldo = parseFloat(rawValue);
+            const fechaValor = fechaInput.value || getTodayDateString(); 
+
+            if (isNaN(saldo) || saldo <= 0) {
+                showNotification("Por favor, ingresa un saldo válido.", true);
+                return;
+            }
+
+            const nuevoRegistro = {
+                fecha: fechaValor, 
+                saldo: saldo
+            };
+
+            const existingIndex = historialSaldos.findIndex(r => r.fecha === fechaValor);
+
+            if (existingIndex !== -1) {
+                historialSaldos[existingIndex] = nuevoRegistro;
+                showNotification(`Saldo para ${formatDisplayDate(fechaValor)} REEMPLAZADO con éxito.`);
+            } else {
+                historialSaldos.push(nuevoRegistro);
+                showNotification(`¡Nuevo Saldo guardado con éxito!`);
+            }
+            
+            localStorage.setItem('saldos', JSON.stringify(historialSaldos));
+            
+            saldoInput.value = '';
+            fechaInput.value = getTodayDateString();
+            cargarDatos();
+        }
+
+        // Función para cargar los datos almacenados
+        function cargarDatos() {
+            const storedSaldos = localStorage.getItem('saldos');
+            if (storedSaldos) {
+                historialSaldos = JSON.parse(storedSaldos);
+            }
+            
+            // 1. Ordena los datos por fecha
+            historialSaldos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+            // 2. Pre-calcular los porcentajes de cambio para toda la interfaz
+            for (let i = 0; i < historialSaldos.length; i++) {
+                const saldoActual = historialSaldos[i].saldo;
+                const saldoAnterior = i > 0 ? historialSaldos[i - 1].saldo : null;
+                
+                const cambioData = calcularCambioPorcentual(saldoActual, saldoAnterior);
+                
+                // Añadir propiedades de cambio al objeto de registro
+                historialSaldos[i].cambioTexto = cambioData.texto;
+                historialSaldos[i].cambioClase = cambioData.clase;
+                historialSaldos[i].cambioPorcentual = cambioData.porcentajeCrudo; 
+                historialSaldos[i].cambioAbsolutoTexto = cambioData.cambioAbsolutoTexto; // Nuevo delta $
+            }
+
+            actualizarTabla();
+            actualizarGrafica();
+        }
+        
+        // ---------------------------------------------------
+        // LÓGICA DE CÁLCULO DE PORCENTAJE Y VALOR ABSOLUTO DE CAMBIO
+        // ---------------------------------------------------
+        function calcularCambioPorcentual(saldoActual, saldoAnterior) {
+            if (saldoAnterior === undefined || saldoAnterior === null || saldoAnterior === 0) {
+                return { 
+                    texto: '-', 
+                    clase: 'no-change', 
+                    porcentajeCrudo: null,
+                    cambioAbsolutoTexto: '-' 
+                };
+            }
+            
+            const cambio = saldoActual - saldoAnterior;
+            const porcentaje = (cambio / saldoAnterior) * 100;
+            
+            let texto;
+            let clase;
+            let cambioAbsolutoTexto;
+
+            if (porcentaje > 0) {
+                texto = `+${porcentaje.toFixed(2)}%`;
+                clase = 'positive-change';
+                cambioAbsolutoTexto = `+$${formatNumberWithCommas(cambio)}`;
+            } else if (porcentaje < 0) {
+                texto = `${porcentaje.toFixed(2)}%`;
+                clase = 'negative-change';
+                // Usar Math.abs para el formato y asegurarse de que el signo ya está en el texto
+                cambioAbsolutoTexto = `-$${formatNumberWithCommas(Math.abs(cambio))}`;
+            } else {
+                texto = '0.00%';
+                clase = 'no-change';
+                cambioAbsolutoTexto = '$0.00';
+            }
+            
+            return { texto, clase, porcentajeCrudo: porcentaje, cambioAbsolutoTexto };
+        }
+
+
+        // ---------------------------------------------------
+        // DIBUJO DE LA INTERFAZ
+        // ---------------------------------------------------
+
+        // Dibuja los datos en la tabla (SALDO, DELTA $ y % UNIFICADOS)
+        function actualizarTabla() {
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = '';
+            
+            historialSaldos.forEach((registro, index) => {
+                const row = tableBody.insertRow();
+                row.id = `row-${index}`; 
+                
+                // Celda 0: Fecha
+                row.insertCell().textContent = formatDisplayDate(registro.fecha); 
+                
+                // Celda 1: Saldo, Delta $ y %
+                const saldoCell = row.insertCell();
+                
+                const saldoFormateado = `$${formatNumberWithCommas(registro.saldo)}`;
+                
+                // Combinar Delta $ y Delta %
+                const cambioHTML = `
+                    <span class="change-container ${registro.cambioClase}">
+                        (${registro.cambioAbsolutoTexto} / ${registro.cambioTexto})
+                    </span>
+                `;
+                
+                // Se inserta el Saldo en la línea superior, y el delta abajo
+                saldoCell.innerHTML = `
+                    <div>${saldoFormateado}</div>
+                    ${registro.cambioAbsolutoTexto === '-' ? '' : cambioHTML}
+                `;
+
+                // Celda 2: Acciones
+                const actionCell = row.insertCell();
+                actionCell.innerHTML = `
+                    <button class="action-button edit-btn" onclick="editarRegistro(${index})">Modificar</button>
+                    <button class="action-button delete-btn" onclick="eliminarRegistro(${index})">Borrar</button>
+                `;
+            });
+        }
+
+        // Dibuja la gráfica (Lógica sin cambios, ya tiene el % como eje secundario)
+        function actualizarGrafica() {
+            const ctx = document.getElementById('saldoChart').getContext('2d');
+            
+            const labels = historialSaldos.map(r => formatDisplayDate(r.fecha));
+            const saldoData = historialSaldos.map(r => r.saldo);
+            const cambioData = historialSaldos.map(r => r.cambioPorcentual);
+
+
+            if (chart) {
+                chart.destroy(); 
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Saldo Total (USD)',
+                            data: saldoData,
+                            borderColor: '#00bcd4',
+                            backgroundColor: 'rgba(0, 188, 212, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            yAxisID: 'y1' // Eje Y Primario
+                        },
+                        {
+                            label: 'Cambio % (vs Anterior)',
+                            data: cambioData,
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            yAxisID: 'y2' // Eje Y Secundario
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Saldo (USD)',
+                                color: '#fff'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff',
+                                callback: function(value, index, ticks) {
+                                    return '$' + formatNumberWithCommas(value);
+                                }
+                            }
+                        },
+                        y2: { // Configuración del Eje Y Secundario (Cambio %)
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Cambio (%)',
+                                color: '#ffc107'
+                            },
+                            grid: {
+                                drawOnChartArea: false, // No dibujar líneas de cuadrícula para este eje
+                                color: 'rgba(255, 193, 7, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffc107',
+                                callback: function(value, index, ticks) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataset.yAxisID === 'y1' && context.parsed.y !== null) {
+                                        // Formato para Saldo (USD)
+                                        label += '$' + formatNumberWithCommas(context.parsed.y);
+                                    } else if (context.dataset.yAxisID === 'y2' && context.parsed.y !== null) {
+                                        // Formato para Cambio (%)
+                                        label += context.parsed.y.toFixed(2) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ---------------------------------------------------
+        // LÓGICA DE MODIFICAR Y ELIMINAR (CRUD) 
+        // ---------------------------------------------------
+        
+        function editarRegistro(index) {
+            const registro = historialSaldos[index];
+            const row = document.getElementById(`row-${index}`);
+            
+            if (!row.classList.contains('editing')) {
+                
+                // Celda 0 (Fecha)
+                row.cells[0].innerHTML = `<input type="date" id="edit-fecha-${index}" value="${registro.fecha}">`;
+                
+                // Celda 1 (Saldo)
+                row.cells[1].innerHTML = `<input type="number" id="edit-saldo-${index}" value="${registro.saldo.toFixed(2)}" step="0.01">`;
+                
+                // Celda 2 (Acciones)
+                row.cells[2].innerHTML = `
+                    <button class="action-button edit-btn" onclick="guardarEdicion(${index})">Guardar</button>
+                    <button class="action-button delete-btn" onclick="cancelarEdicion(${index})">Cancelar</button>
+                `;
+                
+                row.classList.add('editing');
+            }
+        }
+
+        function guardarEdicion(index) {
+            const oldRegistro = historialSaldos[index];
+            const newFecha = document.getElementById(`edit-fecha-${index}`).value;
+            const newSaldo = parseFloat(document.getElementById(`edit-saldo-${index}`).value);
+            
+            if (isNaN(newSaldo) || newSaldo <= 0) {
+                showNotification("El saldo editado no es válido.", true);
+                return;
+            }
+
+            if (oldRegistro.fecha !== newFecha) {
+                const existingIndex = historialSaldos.findIndex(r => r.fecha === newFecha);
+                if (existingIndex !== -1) {
+                    showNotification(`Error: Ya existe un registro para la fecha ${formatDisplayDate(newFecha)}. No se puede guardar la edición.`, true);
+                    return;
+                }
+                
+                historialSaldos.splice(index, 1);
+                historialSaldos.push({ fecha: newFecha, saldo: newSaldo });
+                showNotification(`Registro modificado y reubicado con éxito.`);
+                
+            } else {
+                oldRegistro.saldo = newSaldo;
+                showNotification(`Saldo modificado con éxito.`);
+            }
+
+            localStorage.setItem('saldos', JSON.stringify(historialSaldos));
+            cargarDatos();
+        }
+        
+        function cancelarEdicion(index) {
+            cargarDatos();
+            showNotification(`Edición cancelada.`);
+        }
+
+        function eliminarRegistro(index) {
+            const fechaAEliminar = formatDisplayDate(historialSaldos[index].fecha);
+            if (confirm(`¿Estás seguro de que quieres eliminar el registro del ${fechaAEliminar}?`)) {
+                
+                historialSaldos.splice(index, 1);
+                localStorage.setItem('saldos', JSON.stringify(historialSaldos));
+                cargarDatos();
+                showNotification(`Registro del ${fechaAEliminar} eliminado.`);
+            }
+        }
+
+        // Carga los datos y establece la fecha al iniciar la página
+        window.onload = function() {
+            cargarDatos();
+            
+            const fechaInput = document.getElementById('fechaInput');
+            fechaInput.value = getTodayDateString();
+        };
+    </script>
+</body>
+</html>
