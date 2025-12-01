@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Saldos Cripto - Firebase</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // =======================================================
+        // 🚨 ATENCIÓN: Reemplaza estos placeholders con tus credenciales de Firebase
+        // =======================================================
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY", 
+            authDomain: "TU_AUTH_DOMAIN",
+            projectId: "TU_PROJECT_ID", 
+            storageBucket: "TU_STORAGE_BUCKET",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+
+        // Inicializar Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        const db = firebase.firestore();
+        // Usamos 'saldos' como nombre de la colección
+        const saldosCollection = db.collection("saldos"); 
+    </script>
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #272744;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #e0f7fa;
+        }
+
+        /* Sección de Entrada de Datos - Mejorada */
+        .input-section {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+
+        #saldoInput, #fechaInput {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3f3f6e;
+            color: #fff;
+            width: 150px;
+        }
+
+        /* Estilo para el input de fecha */
+        #fechaInput[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #00bcd4;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            height: 40px;
+            margin-bottom: 3px;
+        }
+
+        button:hover {
+            background-color: #0097a7;
+        }
+        
+        /* Botones de la tabla */
+        .action-button {
+            padding: 5px 8px;
+            margin: 0 2px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .edit-btn { background-color: #ffc107; color: #1a1a2e; }
+        .edit-btn:hover { background-color: #e0a800; }
+        
+        .delete-btn { background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+
+
+        /* Notificación Automática (Toast) */
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50; /* Verde por defecto */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        #notification.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        #notification.error {
+            background-color: #f44336; /* Rojo para errores */
+        }
+        
+        /* Estilos para el porcentaje y delta de cambio */
+        .change-container {
+            display: block; 
+            font-size: 0.9em;
+            margin-top: 4px;
+        }
+        
+        .positive-change {
+            color: #4CAF50; /* Verde */
+            font-weight: bold;
+        }
+
+        .negative-change {
+            color: #f44336; /* Rojo */
+            font-weight: bold;
+        }
+        
+        .no-change {
+            color: #ccc;
+        }
+        
+        /* 2. ESTADÍSTICAS GLOBALES */
+        .statistics-container {
+            margin-top: 40px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #3f3f6e;
+            text-align: center;
+        }
+        .statistics-container p {
+            margin: 5px 0;
+            font-size: 1.1em;
+            display: inline-block;
+            margin-right: 20px;
+        }
+
+        /* Gráfica */
+        .chart-container {
+            height: 400px;
+            margin-top: 50px; 
+            background-color: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .chart-options {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        /* Tabla de Histórico */
+        .table-container {
+            margin-top: 70px;
+        }
+
+        #dataTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        #dataTable th, #dataTable td {
+            padding: 12px;
+            border-bottom: 1px solid #3f3f6e;
+            text-align: left;
+        }
+
+        #dataTable th {
+            background-color: #00bcd4;
+            color: #1a1a2e;
+        }
+        
+        /* Estilo para el modo edición en la tabla */
+        .editing {
+            background-color: #3f3f6e !important;
+        }
+        .editing input {
+            background-color: #4f4f7e;
+            color: #fff;
+            border: 1px solid #00bcd4;
+            padding: 5px;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Histórico de Saldo Total</h1>
+        
+        <div class="input-section">
+            
+            <div class="input-group">
+                <label for="fechaInput">Fecha del Saldo:</label>
+                <input type="date" id="fechaInput">
+            </div>
+
+            <div class="input-group">
+                <label for="saldoInput">Saldo Total (USD):</label>
+                <input type="text" id="saldoInput" placeholder="$1,234.56">
+            </div>
+
+            <button onclick="guardarSaldo()">Guardar Saldo</button>
+        </div>
+
+        <div id="notification"></div>
+        
+        <div class="statistics-container">
+            <h2>✨ Estadísticas Globales</h2>
+            <p><strong>Crecimiento Absoluto Total (Valor Absoluto):</strong> <span id="total-growth" class="no-change">--</span></p>
+            <p><strong>Crecimiento Promedio Mensual (%):</strong> <span id="avg-monthly-growth" class="no-change">--</span></p>
+        </div>
+
+
+        <div class="chart-container">
+            <h2 style="display: inline-block;">📈 Comparativa Histórica</h2>
+            
+            <div class="chart-options">
+                <label><input type="radio" name="chartToggle" value="both" checked onclick="actualizarGrafica()"> Mostrar Saldo y % de Cambio</label>
+                <label><input type="radio" name="chartToggle" value="saldo" onclick="actualizarGrafica()"> Mostrar Solo Saldo</label>
+            </div>
+            
+            <canvas id="saldoChart"></canvas>
+        </div>
+
+        <div class="table-container">
+            <h2>📜 Histórico de Datos</h2>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Saldo Total (USD)</th> <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let historialSaldos = [];
+        let chart;
+
+        // Función para mostrar la notificación automática
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            
+            if (isError) {
+                notification.classList.add('error');
+            } else {
+                notification.classList.remove('error');
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Función auxiliar para obtener la fecha de hoy en formato YYYY-MM-DD
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Función para obtener la fecha formateada (ej: 30 Nov 2025)
+        function formatDisplayDate(dateString) {
+            const date = new Date(dateString.replace(/-/g, '/'));
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return isNaN(date) ? dateString : date.toLocaleDateString('es-ES', options); 
+        }
+        
+        // Aplica formato de coma de miles y punto decimal
+        function formatNumberWithCommas(number) {
+            return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+
+        // ---------------------------------------------------
+        // LÓGICA DE FIREBASE: GUARDAR (CREAR/REEMPLAZAR)
+        // ---------------------------------------------------
+        async function guardarSaldo() {
+            const saldoInput = document.getElementById('saldoInput');
+            const fechaInput = document.getElementById('fechaInput');
+            
+            let rawValue = saldoInput.value.trim();
+            rawValue = rawValue.replace(/[$,\s]/g, ''); 
+            rawValue = rawValue.replace(/,/g, '.'); 
+            
+            const saldo = parseFloat(rawValue);
+            const fechaValor = fechaInput.value || getTodayDateString(); 
+
+            if (isNaN(saldo) || saldo <= 0) {
+                showNotification("Por favor, ingresa un saldo válido.", true);
+                return;
+            }
+            
+            // Usamos la fecha como ID del documento para prevenir duplicados
+            const docRef = saldosCollection.doc(fechaValor);
+
+            try {
+                await docRef.set({
+                    saldo: saldo
+                });
+                
+                showNotification(`Saldo para ${formatDisplayDate(fechaValor)} guardado/reemplazado con éxito en Firebase.`);
+                
+                saldoInput.value = '';
+                fechaInput.value = getTodayDateString();
+                cargarDatos(); // Recargar datos después de guardar
+            } catch (error) {
+                console.error("Error al guardar en Firebase: ", error);
+                showNotification("Error al guardar el saldo en la base de datos.", true);
+            }
+        }
+
+        // ---------------------------------------------------
+        // LÓGICA DE FIREBASE: CARGAR DATOS
+        // ---------------------------------------------------
+        async function cargarDatos() {
+            try {
+                // Obtener datos ordenados por la fecha (que usamos como ID)
+                const snapshot = await saldosCollection.orderBy(firebase.firestore.FieldPath.documentId(), "asc").get();
+                
+                historialSaldos = [];
+                snapshot.forEach(doc => {
+                    historialSaldos.push({
+                        fecha: doc.id, 
+                        saldo: doc.data().saldo
+                    });
+                });
+            } catch (error) {
+                console.error("Error al cargar datos: ", error);
+                showNotification("Error al cargar datos de la base de datos.", true);
+                return;
+            }
+            
+            // 1. Ordena los datos por fecha (aunque ya están ordenados por Firebase)
+            historialSaldos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+            // 2. Pre-calcular los porcentajes de cambio
+            for (let i = 0; i < historialSaldos.length; i++) {
+                const saldoActual = historialSaldos[i].saldo;
+                const saldoAnterior = i > 0 ? historialSaldos[i - 1].saldo : null;
+                
+                const cambioData = calcularCambioPorcentual(saldoActual, saldoAnterior);
+                
+                historialSaldos[i].cambioTexto = cambioData.texto;
+                historialSaldos[i].cambioClase = cambioData.clase;
+                historialSaldos[i].cambioPorcentual = cambioData.porcentajeCrudo; 
+                historialSaldos[i].cambioAbsolutoTexto = cambioData.cambioAbsolutoTexto;
+            }
+            
+            // 3. Calcular las nuevas estadísticas globales
+            calcularEstadisticasGlobales();
+
+            // 4. Actualizar interfaz
+            actualizarTabla();
+            actualizarGrafica();
+        }
+
+        // ---------------------------------------------------
+        // LÓGICA DE ESTADÍSTICAS GLOBALES (NUEVO)
+        // ---------------------------------------------------
+        function calcularEstadisticasGlobales() {
+            const totalGrowthElement = document.getElementById('total-growth');
+            const avgMonthlyGrowthElement = document.getElementById('avg-monthly-growth');
+
+            if (historialSaldos.length < 2) {
+                totalGrowthElement.textContent = '--';
+                avgMonthlyGrowthElement.textContent = '--';
+                totalGrowthElement.className = 'no-change';
+                avgMonthlyGrowthElement.className = 'no-change';
+                return;
+            }
+
+            const primerRegistro = historialSaldos[0];
+            const ultimoRegistro = historialSaldos[historialSaldos.length - 1];
+
+            // 1. Crecimiento Absoluto Total (Valor Absoluto)
+            const crecimientoTotal = ultimoRegistro.saldo - primerRegistro.saldo;
+            
+            // Aplicar formato de color, signo y valor absoluto
+            let totalGrowthText;
+            let totalGrowthClass;
+            
+            if (crecimientoTotal > 0) {
+                totalGrowthText = `+$${formatNumberWithCommas(crecimientoTotal)}`;
+                totalGrowthClass = 'positive-change';
+            } else if (crecimientoTotal < 0) {
+                totalGrowthText = `-$${formatNumberWithCommas(Math.abs(crecimientoTotal))}`;
+                totalGrowthClass = 'negative-change';
+            } else {
+                totalGrowthText = `$0.00`;
+                totalGrowthClass = 'no-change';
+            }
+            
+            totalGrowthElement.textContent = totalGrowthText;
+            totalGrowthElement.className = totalGrowthClass;
+
+
+            // 2. Crecimiento Promedio Mensual (%)
+            const startDate = new Date(primerRegistro.fecha.replace(/-/g, '/'));
+            const endDate = new Date(ultimoRegistro.fecha.replace(/-/g, '/'));
+            
+            // Días totales transcurridos
+            const diffTime = Math.abs(endDate - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            const totalPercentageChange = (crecimientoTotal / primerRegistro.saldo);
+            
+            let avgMonthlyText;
+            let avgMonthlyClass;
+            
+            if (diffDays === 0 || primerRegistro.saldo === 0) {
+                avgMonthlyText = '0.00%';
+                avgMonthlyClass = 'no-change';
+            } else {
+                // Promedio diario de % * 30 días para obtener el promedio mensual
+                const avgDailyPercentageChange = totalPercentageChange / diffDays;
+                const avgMonthlyPercentageGrowth = avgDailyPercentageChange * 30; 
+                
+                if (avgMonthlyPercentageGrowth > 0) {
+                    avgMonthlyText = `+${(avgMonthlyPercentageGrowth * 100).toFixed(2)}%`;
+                    avgMonthlyClass = 'positive-change';
+                } else {
+                    avgMonthlyText = `${(avgMonthlyPercentageGrowth * 100).toFixed(2)}%`;
+                    avgMonthlyClass = 'negative-change';
+                }
+            }
+
+            avgMonthlyGrowthElement.textContent = avgMonthlyText;
+            avgMonthlyGrowthElement.className = avgMonthlyClass;
+        }
+
+
+        // ---------------------------------------------------
+        // LÓGICA DE CÁLCULO DE CAMBIO INTER-REGISTRO
+        // ---------------------------------------------------
+        function calcularCambioPorcentual(saldoActual, saldoAnterior) {
+            if (saldoAnterior === undefined || saldoAnterior === null || saldoAnterior === 0) {
+                return { 
+                    texto: '-', 
+                    clase: 'no-change', 
+                    porcentajeCrudo: null,
+                    cambioAbsolutoTexto: '-' 
+                };
+            }
+            
+            const cambio = saldoActual - saldoAnterior;
+            const porcentaje = (cambio / saldoAnterior) * 100;
+            
+            let texto;
+            let clase;
+            let cambioAbsolutoTexto;
+
+            if (porcentaje > 0) {
+                texto = `+${porcentaje.toFixed(2)}%`;
+                clase = 'positive-change';
+                cambioAbsolutoTexto = `+$${formatNumberWithCommas(cambio)}`;
+            } else if (porcentaje < 0) {
+                texto = `${porcentaje.toFixed(2)}%`;
+                clase = 'negative-change';
+                cambioAbsolutoTexto = `-$${formatNumberWithCommas(Math.abs(cambio))}`;
+            } else {
+                texto = '0.00%';
+                clase = 'no-change';
+                cambioAbsolutoTexto = '$0.00';
+            }
+            
+            return { texto, clase, porcentajeCrudo: porcentaje, cambioAbsolutoTexto };
+        }
+
+
+        // ---------------------------------------------------
+        // DIBUJO DE LA INTERFAZ
+        // ---------------------------------------------------
+        function actualizarTabla() {
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = '';
+            
+            historialSaldos.forEach((registro, index) => {
+                const row = tableBody.insertRow();
+                row.id = `row-${index}`; 
+                
+                // Celda 0: Fecha
+                row.insertCell().textContent = formatDisplayDate(registro.fecha); 
+                
+                // Celda 1: Saldo, Delta $ y %
+                const saldoCell = row.insertCell();
+                
+                const saldoFormateado = `$${formatNumberWithCommas(registro.saldo)}`;
+                
+                const cambioHTML = `
+                    <span class="change-container ${registro.cambioClase}">
+                        (${registro.cambioAbsolutoTexto} / ${registro.cambioTexto})
+                    </span>
+                `;
+                
+                saldoCell.innerHTML = `
+                    <div>${saldoFormateado}</div>
+                    ${registro.cambioAbsolutoTexto === '-' ? '' : cambioHTML}
+                `;
+
+                // Celda 2: Acciones
+                const actionCell = row.insertCell();
+                actionCell.innerHTML = `
+                    <button class="action-button edit-btn" onclick="editarRegistro(${index})">Modificar</button>
+                    <button class="action-button delete-btn" onclick="eliminarRegistro(${index})">Borrar</button>
+                `;
+            });
+        }
+
+        // Dibuja la gráfica (Añadido toggle de visibilidad)
+        function actualizarGrafica() {
+            const ctx = document.getElementById('saldoChart').getContext('2d');
+            
+            const labels = historialSaldos.map(r => formatDisplayDate(r.fecha));
+            const saldoData = historialSaldos.map(r => r.saldo);
+            const cambioData = historialSaldos.map(r => r.cambioPorcentual);
+            
+            // NUEVO: Lee el estado del radio button
+            const chartToggleValue = document.querySelector('input[name="chartToggle"]:checked').value;
+            const showPercentage = chartToggleValue === 'both';
+
+            if (chart) {
+                chart.destroy(); 
+            }
+
+            const datasets = [
+                {
+                    label: 'Saldo Total (USD)',
+                    data: saldoData,
+                    borderColor: '#00bcd4',
+                    backgroundColor: 'rgba(0, 188, 212, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    yAxisID: 'y1' 
+                }
+            ];
+            
+            if (showPercentage) {
+                 datasets.push({
+                    label: 'Cambio % (vs Anterior)',
+                    data: cambioData,
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    yAxisID: 'y2'
+                });
+            }
+
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets // Usa el array datasets condicional
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Saldo (USD)',
+                                color: '#fff'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff',
+                                callback: function(value, index, ticks) {
+                                    return '$' + formatNumberWithCommas(value);
+                                }
+                            }
+                        },
+                        y2: { 
+                            // NUEVO: Oculta el eje y2 si solo se muestra el saldo
+                            display: showPercentage,
+                            type: 'linear',
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Cambio (%)',
+                                color: '#ffc107'
+                            },
+                            grid: {
+                                drawOnChartArea: false, 
+                                color: 'rgba(255, 193, 7, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffc107',
+                                callback: function(value, index, ticks) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#fff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.dataset.yAxisID === 'y1' && context.parsed.y !== null) {
+                                        label += '$' + formatNumberWithCommas(context.parsed.y);
+                                    } else if (context.dataset.yAxisID === 'y2' && context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(2) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // ---------------------------------------------------
+        // LÓGICA DE FIREBASE: MODIFICAR Y ELIMINAR (CRUD) 
+        // ---------------------------------------------------
+        
+        function editarRegistro(index) {
+            const registro = historialSaldos[index];
+            const row = document.getElementById(`row-${index}`);
+            
+            if (!row.classList.contains('editing')) {
+                
+                // Celda 0 (Fecha)
+                row.cells[0].innerHTML = `<input type="date" id="edit-fecha-${index}" value="${registro.fecha}">`;
+                
+                // Celda 1 (Saldo)
+                row.cells[1].innerHTML = `<input type="number" id="edit-saldo-${index}" value="${registro.saldo.toFixed(2)}" step="0.01">`;
+                
+                // Celda 2 (Acciones)
+                row.cells[2].innerHTML = `
+                    <button class="action-button edit-btn" onclick="guardarEdicion(${index})">Guardar</button>
+                    <button class="action-button delete-btn" onclick="cancelarEdicion(${index})">Cancelar</button>
+                `;
+                
+                row.classList.add('editing');
+            }
+        }
+
+        async function guardarEdicion(index) {
+            const oldRegistro = historialSaldos[index];
+            const newFecha = document.getElementById(`edit-fecha-${index}`).value;
+            const newSaldo = parseFloat(document.getElementById(`edit-saldo-${index}`).value);
+            
+            if (isNaN(newSaldo) || newSaldo <= 0) {
+                showNotification("El saldo editado no es válido.", true);
+                return;
+            }
+
+            try {
+                if (oldRegistro.fecha !== newFecha) {
+                    // Si cambia la fecha, primero verificamos que la nueva fecha no exista
+                    const existingDoc = await saldosCollection.doc(newFecha).get();
+                    if (existingDoc.exists) {
+                        showNotification(`Error: Ya existe un registro para la fecha ${formatDisplayDate(newFecha)}.`, true);
+                        return;
+                    }
+                    
+                    // 1. Crear nuevo documento con la nueva fecha/saldo
+                    await saldosCollection.doc(newFecha).set({ saldo: newSaldo });
+                    // 2. Eliminar el documento anterior
+                    await saldosCollection.doc(oldRegistro.fecha).delete();
+                    
+                    showNotification(`Registro modificado y reubicado con éxito en Firebase.`);
+                    
+                } else {
+                    // Si la fecha es la misma, solo actualizamos el saldo
+                    await saldosCollection.doc(oldRegistro.fecha).update({ saldo: newSaldo });
+                    showNotification(`Saldo modificado con éxito en Firebase.`);
+                }
+            } catch (error) {
+                console.error("Error al guardar edición en Firebase: ", error);
+                showNotification("Error al guardar la edición en la base de datos.", true);
+                return;
+            }
+
+            cargarDatos();
+        }
+        
+        function cancelarEdicion(index) {
+            cargarDatos();
+            showNotification(`Edición cancelada.`);
+        }
+
+        async function eliminarRegistro(index) {
+            const registro = historialSaldos[index];
+            const fechaAEliminar = formatDisplayDate(registro.fecha);
+            
+            if (confirm(`¿Estás seguro de que quieres eliminar el registro del ${fechaAEliminar}?`)) {
+                try {
+                    await saldosCollection.doc(registro.fecha).delete();
+                    showNotification(`Registro del ${fechaAEliminar} eliminado de Firebase.`);
+                    cargarDatos();
+                } catch (error) {
+                    console.error("Error al eliminar registro en Firebase: ", error);
+                    showNotification("Error al eliminar el registro de la base de datos.", true);
+                }
+            }
+        }
+
+        // Carga los datos y establece la fecha al iniciar la página
+        window.onload = function() {
+            // Inicializamos el input de fecha a hoy
+            const fechaInput = document.getElementById('fechaInput');
+            fechaInput.value = getTodayDateString();
+
+            // Cargamos los datos de Firebase
+            cargarDatos(); 
+        };
+    </script>
+</body>
+</html>
